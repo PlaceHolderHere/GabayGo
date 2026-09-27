@@ -1,0 +1,1 @@
+A project built with React and Vite for keeping track of barangay alerts and updates.
