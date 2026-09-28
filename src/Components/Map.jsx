@@ -4,40 +4,65 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
 
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
 // ICONS
-const defaultIcon = new L.Icon({
-  iconUrl: markerIcon,
-  iconRetinaUrl: markerIcon2x,
-  shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+const CustomIcon = L.Icon.extend({
+  options: {
+    iconSize: [40, 40],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+  }
 });
 
-const temporaryLocationIcon = new L.DivIcon({
-  className: 'temporary-location-pin-wrapper',
-  html: '<div class="temporary-location-pin"><span class="temporary-location-pin__inner"></span></div>',
-  iconSize: [22, 32],
-  iconAnchor: [11, 31],
-  popupAnchor: [0, -26],
-});
+const defaultIcon = new CustomIcon({
+    iconUrl: 'src/assets/Location.svg',
+})
 
-L.Marker.prototype.options.icon = defaultIcon;
+const outageIcon = new CustomIcon({
+    iconUrl: 'src/assets/Outage.svg',
+})
+
+const serviceIcon = new CustomIcon({
+    iconUrl: 'src/assets/Service.svg',
+})
+
+const marketPlaceIcon = new CustomIcon({
+    iconUrl: 'src/assets/Marketplace.svg',
+})
+
+const reportIcon = new CustomIcon({
+    iconUrl: 'src/assets/Report.svg',
+})
+
+const temporaryLocationIcon = new CustomIcon({
+    iconUrl: 'src/assets/TemporaryLocation.svg',
+})
+
 
 // INITIAL LOCATIONS
+const categories = ['Location', 'Outage', 'Service', 'Marketplace', 'Report']
+const categoryIcons = {
+    'Location': defaultIcon, 
+    'Outage': outageIcon, 
+    'Service': serviceIcon, 
+    'Marketplace': marketPlaceIcon, 
+    'Report': reportIcon
+}
 const initialLocations = [
   {
     id: 1,
     name: 'Barangay Hall',
-    category: 'Landmark',
+    category: 'Location',
     description: 'Bago Aplaya Barangay Hall.',
     lat: 7.0435,
     lng: 125.5315,
+  },
+  {
+    id: 2,
+    name: 'Health Service',
+    category: 'Service',
+    description: 'A Medical and Health Service Run',
+    lat: 7.042658321058582,
+    lng: 125.52893733731472,
   },
 ];
 
@@ -56,14 +81,17 @@ export default function Map() {
   const [selectedPosition, setSelectedPosition] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
-    category: 'Landmark',
+    category: categories[0],
     description: '',
   });
 
+  // Updates selected position
   const handleMapClick = (latlng) => {
+    console.log(latlng);
     setSelectedPosition(latlng);
   };
 
+  // Updates formData when user inputs a change
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({
@@ -72,6 +100,7 @@ export default function Map() {
     }));
   };
 
+  // Saves a new location based on formData
   const handleAddLocation = (event) => {
     event.preventDefault();
 
@@ -91,7 +120,7 @@ export default function Map() {
     setLocations((prev) => [...prev, newLocation]);
     setFormData({
       name: '',
-      category: 'Landmark',
+      category: categories[0],
       description: '',
     });
     setSelectedPosition(null);
@@ -102,26 +131,12 @@ export default function Map() {
       <div className="map-panel">
         <div className="map-header">
           <div>
-            <p className="eyebrow">Map View</p>
-            <h2>Locations</h2>
+            <h2>Add a Location</h2>
+            <p>Click anywhere on the map to choose a location.</p>
           </div>
         </div>
 
-        <ul className="location-list">
-          {locations.map((location) => (
-            <li key={location.id} className="location-item">
-              <strong>{location.name}</strong>
-              <span>{location.category}</span>
-            </li>
-          ))}
-        </ul>
-
         <form className="add-location-form" onSubmit={handleAddLocation}>
-          <div className="form-header">
-            <h3>Add New Pin</h3>
-            <p>Click anywhere on the map to choose a location.</p>
-          </div>
-          
           <label>
             Name
             <input
@@ -136,11 +151,11 @@ export default function Map() {
           <label>
             Category
             <select name="category" value={formData.category} onChange={handleInputChange}>
-              <option value="Landmark">Landmark</option>
-              <option value="Cafe">Cafe</option>
-              <option value="Park">Park</option>
-              <option value="Shopping">Shopping</option>
-              <option value="Office">Office</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>))
+            }
             </select>
           </label>
 
@@ -187,7 +202,7 @@ export default function Map() {
           )}
 
           {locations.map((location) => (
-            <Marker key={location.id} position={[location.lat, location.lng]} icon={defaultIcon}>
+            <Marker key={location.id} position={[location.lat, location.lng]} icon={categoryIcons[location.category]}>
               <Popup>
                 <div className="popup-card">
                   <strong>{location.name}</strong>
