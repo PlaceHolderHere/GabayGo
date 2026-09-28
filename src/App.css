@@ -1,4 +1,4 @@
 .app-shell {
 	min-height: 100vh;
-	background: #edf0e8;
+	background: var(--color-cream);
 }

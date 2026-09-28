@@ -1,7 +1,7 @@
 .map-page {
   min-height: calc(100vh - 72px);
   padding: 0.85rem clamp(0.65rem, 2vw, 1.4rem) 1.1rem;
-  background: #edf0e8;
+  background: var(--color-cream);
 }
 
 .map-stage {
@@ -10,9 +10,9 @@
   height: calc(100vh - 72px - 1.95rem);
   min-height: 480px;
   overflow: hidden;
-  border: 1px solid #d6ddd2;
-  background: #dfe8dc;
-  box-shadow: 0 14px 40px rgba(35, 57, 47, 0.12);
+  border: 1px solid var(--color-line);
+  background: var(--color-sand);
+  box-shadow: 0 14px 40px color-mix(in srgb, var(--color-brown) 14%, transparent);
 }
 
 .map-panel {
@@ -21,9 +21,9 @@
   inset: 1rem auto 1rem 1rem;
   width: var(--map-panel-width);
   overflow-y: auto;
-  background: #fff;
-  border: 1px solid rgba(33, 51, 39, 0.12);
-  box-shadow: 0 12px 32px rgba(15, 34, 22, 0.2);
+  background: var(--color-cream);
+  border: 1px solid var(--color-line);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--color-brown) 22%, transparent);
   padding: 1.1rem;
   display: flex;
   flex-direction: column;
@@ -41,12 +41,12 @@
   align-items: center;
   justify-items: center;
   padding: 0;
-  border: 1px solid rgba(33, 51, 39, 0.14);
+  border: 1px solid var(--color-line);
   border-left: 0;
   border-radius: 0 4px 4px 0;
-  background: #fff;
-  color: #26372c;
-  box-shadow: 0 5px 18px rgba(15, 34, 22, 0.15);
+  background: var(--color-cream);
+  color: var(--color-brown);
+  box-shadow: 0 5px 18px color-mix(in srgb, var(--color-brown) 18%, transparent);
   font-size: 1.8rem;
   font-weight: 400;
   line-height: 1;
@@ -67,13 +67,13 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.8rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-line);
   padding-bottom: 0.8rem;
 }
 
 .map-eyebrow {
   margin: 0;
-  color: #718172;
+  color: var(--color-muted);
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -82,7 +82,7 @@
 
 .eyebrow {
   margin: 0;
-  color: #4f46e5;
+  color: var(--color-brown);
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -91,7 +91,7 @@
 
 .map-header h2 {
   margin: 0.35rem 0 0.25rem;
-  color: #26372c;
+  color: var(--color-brown);
   font-family: Manrope, sans-serif;
   font-size: 1.35rem;
   font-weight: 700;
@@ -99,7 +99,7 @@
 
 .map-header > div > p:last-child {
   margin: 0;
-  color: #718172;
+  color: var(--color-muted);
   font-size: 0.78rem;
 }
 
@@ -117,10 +117,10 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
-  background: #eef2ff;
+  background: var(--color-soft);
   border-radius: 12px;
   padding: 0.8rem 0.9rem;
-  color: #1f2937;
+  color: var(--color-brown);
 }
 
 .location-item strong {
@@ -131,8 +131,8 @@
 .location-item span {
   display: inline-flex;
   align-items: center;
-  background: #c7d2fe;
-  color: #312e81;
+  background: var(--color-sand);
+  color: var(--color-brown);
   border-radius: 999px;
   font-size: 0.72rem;
   padding: 0.35rem 0.65rem;
@@ -143,15 +143,15 @@
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  background: #f7f8f4;
-  border: 1px solid #e2e8df;
+  background: var(--color-soft);
+  border: 1px solid var(--color-line);
   border-radius: 3px;
   padding: 0.85rem;
 }
 
 .add-location-form h3 {
   margin: 0;
-  color: #26372c;
+  color: var(--color-brown);
   font-size: 1.1rem;
 }
 
@@ -160,7 +160,7 @@
   flex-direction: column;
   gap: 0.35rem;
   font-size: 0.88rem;
-  color: #526357;
+  color: var(--color-brown);
   font-weight: 600;
 }
 
@@ -169,10 +169,10 @@
 .add-location-form textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #d5ddd3;
+  border: 1px solid var(--color-line);
   border-radius: 3px;
-  background: #fff;
-  color: #26372c;
+  background: var(--color-cream);
+  color: var(--color-brown);
   padding: 0.7rem 0.8rem;
   font: inherit;
 }
@@ -185,8 +185,8 @@
 .add-location-form button {
   border: none;
   border-radius: 3px;
-  background: #334d3b;
-  color: white;
+  background: var(--color-brown);
+  color: var(--color-cream);
   font-weight: 700;
   padding: 0.8rem 1rem;
   cursor: pointer;
@@ -195,7 +195,7 @@
 
 .add-location-form button:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: #42634b;
+  background: color-mix(in srgb, var(--color-brown) 88%, var(--color-gold));
 }
 
 .add-location-form button:disabled {
@@ -207,9 +207,9 @@
 .map-feedback {
   margin: 0;
   padding: 0.85rem;
-  border-left: 3px solid #91ad83;
-  background: #f1f4ed;
-  color: #526357;
+  border-left: 3px solid var(--color-gold);
+  background: var(--color-soft);
+  color: var(--color-brown);
   font-size: 0.82rem;
   line-height: 1.55;
 }
@@ -222,21 +222,21 @@
   margin-top: 0.75rem;
   padding: 0.6rem 0.85rem;
   border: 0;
-  background: #334d3b;
-  color: #fff;
+  background: var(--color-brown);
+  color: var(--color-cream);
   font-size: 0.8rem;
   font-weight: 650;
   cursor: pointer;
 }
 
 .map-access-message button:hover {
-  background: #42634b;
+  background: color-mix(in srgb, var(--color-brown) 88%, var(--color-gold));
 }
 
 .map-feedback--error {
-  border-color: #b34f3d;
-  background: #fbf0ed;
-  color: #763629;
+  border-color: var(--color-brown);
+  background: var(--color-sand);
+  color: var(--color-brown);
 }
 
 .map-container {
@@ -260,12 +260,12 @@
 
 .popup-card strong {
   font-size: 1rem;
-  color: #111827;
+  color: var(--color-brown);
 }
 
 .popup-card span {
   font-size: 0.7rem;
-  color: #4338ca;
+  color: var(--color-brown);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -273,7 +273,7 @@
 
 .popup-card p {
   margin: 0;
-  color: #4b5563;
+  color: var(--color-muted);
   line-height: 1.5;
 }
 
@@ -281,17 +281,17 @@
   align-self: flex-start;
   margin-top: 0.4rem;
   padding: 0.45rem 0.65rem;
-  border: 1px solid #e4b9ad;
+  border: 1px solid var(--color-gold);
   border-radius: 3px;
-  background: #fff8f6;
-  color: #8c3f30;
+  background: var(--color-cream);
+  color: var(--color-brown);
   font-size: 0.76rem;
   font-weight: 650;
   cursor: pointer;
 }
 
 .popup-delete-button:hover:not(:disabled) {
-  background: #fbe8e2;
+  background: var(--color-sand);
 }
 
 .popup-delete-button:disabled {
@@ -301,13 +301,13 @@
 
 .popup-delete-error {
   margin: 0;
-  color: #8c3f30;
+  color: var(--color-brown);
   font-size: 0.73rem;
   line-height: 1.4;
 }
 
 .popup-card--temporary span {
-  color: #b45309;
+  color: var(--color-brown);
 }
 
 .temporary-location-pin-wrapper {
@@ -319,18 +319,18 @@
   position: relative;
   width: 22px;
   height: 32px;
-  background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+  background: linear-gradient(180deg, var(--color-gold) 0%, var(--color-brown) 100%);
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
-  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--color-brown) 35%, transparent);
+  border: 2px solid color-mix(in srgb, var(--color-cream) 80%, transparent);
 }
 
 .temporary-location-pin__inner {
   position: absolute;
   inset: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--color-cream) 90%, transparent);
 }
 
 .temporary-location-pin::after {
@@ -338,8 +338,8 @@
   position: absolute;
   width: 10px;
   height: 10px;
-  background: #eff6ff;
-  border: 2px solid rgba(37, 99, 235, 0.8);
+  background: var(--color-cream);
+  border: 2px solid color-mix(in srgb, var(--color-brown) 80%, transparent);
   border-radius: 50%;
   left: 5px;
   top: 5px;

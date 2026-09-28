@@ -1,9 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
 
 :root {
+	--color-sand: #ffedb9;
+	--color-gold: #e5ac31;
+	--color-cream: #fcf9ea;
+	--color-brown: #633f38;
+	--color-muted: color-mix(in srgb, var(--color-brown) 68%, var(--color-cream));
+	--color-line: color-mix(in srgb, var(--color-brown) 18%, var(--color-cream));
+	--color-soft: color-mix(in srgb, var(--color-sand) 38%, var(--color-cream));
+	--color-shadow: color-mix(in srgb, var(--color-brown) 18%, transparent);
 	font-family: 'DM Sans', sans-serif;
-	color: #26372c;
-	background: #edf0e8;
+	color: var(--color-brown);
+	background: var(--color-cream);
 	font-synthesis: none;
 	text-rendering: optimizeLegibility;
 	-webkit-font-smoothing: antialiased;
@@ -29,6 +37,6 @@ select {
 
 button:focus-visible,
 a:focus-visible {
-	outline: 3px solid #d7a33d;
+	outline: 3px solid var(--color-gold);
 	outline-offset: 3px;
 }

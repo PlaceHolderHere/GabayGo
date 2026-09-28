@@ -5,7 +5,7 @@
 	display: grid;
 	place-items: center;
 	padding: 1.25rem;
-	background: rgba(22, 36, 28, 0.48);
+	background: color-mix(in srgb, var(--color-brown) 58%, transparent);
 	backdrop-filter: blur(5px);
 }
 
@@ -13,9 +13,9 @@
 	position: relative;
 	width: min(100%, 440px);
 	padding: clamp(2rem, 7vw, 3.2rem);
-	border: 1px solid #e1e5dc;
-	background: #f8f8f3;
-	box-shadow: 0 28px 90px rgba(16, 30, 21, 0.25);
+	border: 1px solid var(--color-line);
+	background: var(--color-cream);
+	box-shadow: 0 28px 90px color-mix(in srgb, var(--color-brown) 28%, transparent);
 	animation: dialog-arrive 180ms ease-out both;
 }
 
@@ -28,14 +28,14 @@
 	border: 0;
 	border-radius: 50%;
 	background: transparent;
-	color: #647064;
+	color: var(--color-muted);
 	font-size: 1.6rem;
 	line-height: 1;
 	cursor: pointer;
 }
 
 .login-close:hover {
-	background: #e9ede5;
+	background: var(--color-soft);
 }
 
 .login-mark {
@@ -45,8 +45,8 @@
 	place-items: center;
 	margin-bottom: 1.8rem;
 	border-radius: 50% 50% 50% 12%;
-	background: #d7a33d;
-	color: #23392f;
+	background: var(--color-gold);
+	color: var(--color-brown);
 	font-family: Georgia, serif;
 	font-size: 1.5rem;
 	font-weight: 700;
@@ -55,7 +55,7 @@
 
 .login-eyebrow {
 	margin: 0;
-	color: #59765b;
+	color: var(--color-brown);
 	font-size: 0.7rem;
 	font-weight: 700;
 	letter-spacing: 0.14em;
@@ -64,7 +64,7 @@
 
 .login-dialog h2 {
 	margin: 0.75rem 0;
-	color: #26372c;
+	color: var(--color-brown);
 	font-family: Manrope, sans-serif;
 	font-size: clamp(1.8rem, 6vw, 2.3rem);
 	font-weight: 700;
@@ -73,7 +73,7 @@
 
 .login-intro {
 	margin: 0;
-	color: #68756a;
+	color: var(--color-muted);
 	font-size: 0.9rem;
 	line-height: 1.7;
 }
@@ -87,10 +87,10 @@
 	gap: 0.8rem;
 	margin-top: 1.7rem;
 	padding: 0.8rem 1rem;
-	border: 1px solid #d7ddd5;
+	border: 1px solid var(--color-line);
 	border-radius: 4px;
-	background: #fff;
-	color: #26372c;
+	background: var(--color-cream);
+	color: var(--color-brown);
 	font-size: 0.88rem;
 	font-weight: 650;
 	cursor: pointer;
@@ -98,8 +98,8 @@
 }
 
 .google-sign-in:hover:not(:disabled) {
-	border-color: #91ad83;
-	background: #fbfcf8;
+	border-color: var(--color-gold);
+	background: var(--color-soft);
 }
 
 .google-sign-in:disabled {
@@ -117,16 +117,16 @@
 .login-message {
 	margin: 0.9rem 0 0;
 	padding: 0.75rem 0.85rem;
-	border-left: 3px solid #d7a33d;
-	background: #f0f1e9;
-	color: #48584b;
+	border-left: 3px solid var(--color-gold);
+	background: var(--color-sand);
+	color: var(--color-brown);
 	font-size: 0.78rem;
 	line-height: 1.55;
 }
 
 .login-terms {
 	margin: 1.2rem 0 0;
-	color: #8a9488;
+	color: var(--color-muted);
 	font-size: 0.74rem;
 }
 
