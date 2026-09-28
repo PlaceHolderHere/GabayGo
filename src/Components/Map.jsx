@@ -70,6 +70,9 @@ export default function Map({ user, onRequestLogin }) {
   const [deleteFeedback, setDeleteFeedback] = useState({ locationId: null, status: '', error: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
+  const [activePanelTab, setActivePanelTab] = useState('search');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilters, setCategoryFilters] = useState([]);
   const [selectedPosition, setSelectedPosition] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -86,6 +89,12 @@ export default function Map({ user, onRequestLogin }) {
       ? 'signed-out'
       : adminCheck.uid === user.uid ? adminCheck.status : 'checking';
   const userId = user?.uid;
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
+  const visibleLocations = locations.filter((location) => {
+    const matchesCategory = categoryFilters.length === 0 || categoryFilters.includes(location.category);
+    const searchableText = `${location.name} ${location.category} ${location.description}`.toLocaleLowerCase();
+    return matchesCategory && (!normalizedSearch || searchableText.includes(normalizedSearch));
+  });
 
   useEffect(() => {
     if (!db) return undefined;
@@ -120,6 +129,8 @@ export default function Map({ user, onRequestLogin }) {
   const handleMapClick = (latlng) => {
     if (adminStatus !== 'admin') return;
     setSelectedPosition(latlng);
+    setActivePanelTab('create');
+    setPanelOpen(true);
   };
 
   // Updates formData when user inputs a change
@@ -218,13 +229,88 @@ export default function Map({ user, onRequestLogin }) {
             <div className="map-header">
               <div>
                 <p className="map-eyebrow">Community map</p>
-                <h2>{adminStatus === 'admin' ? 'Add a Location' : 'Map Locations'}</h2>
-                <p>{adminStatus === 'admin' ? 'Choose a point on the map to get started.' : 'Browse places shared with your community.'}</p>
+                <h2>Community map</h2>
+                <p>Find places or add a location.</p>
               </div>
             </div>
 
-            {adminStatus === 'admin' ? (
-            <form className="add-location-form" onSubmit={handleAddLocation}>
+            <div className="sidebar-tabs" role="group" aria-label="Map sidebar views">
+              <button
+                className={activePanelTab === 'search' ? 'sidebar-tab sidebar-tab--active' : 'sidebar-tab'}
+                type="button"
+                onClick={() => setActivePanelTab('search')}
+                aria-pressed={activePanelTab === 'search'}
+              >
+                Search
+              </button>
+              <button
+                className={activePanelTab === 'create' ? 'sidebar-tab sidebar-tab--active' : 'sidebar-tab'}
+                type="button"
+                onClick={() => setActivePanelTab('create')}
+                aria-pressed={activePanelTab === 'create'}
+              >
+                Create
+              </button>
+            </div>
+
+            <div className="sidebar-view" aria-label={activePanelTab === 'search' ? 'Search locations' : 'Create a location'}>
+            {activePanelTab === 'search' && (
+              <>
+                <section className="location-filters" aria-label="Search and filter locations">
+                  <label>
+                    Search locations
+                    <input
+                      type="search"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder="Name, category, or details"
+                    />
+                  </label>
+                  <fieldset className="location-category-filter">
+                    <legend>Categories</legend>
+                    <div className="location-category-options">
+                      {categories.map((category) => (
+                        <label className="location-category-option" key={category}>
+                          <input
+                            type="checkbox"
+                            checked={categoryFilters.includes(category)}
+                            onChange={(event) => {
+                              setCategoryFilters((selected) => event.target.checked
+                                ? [...selected, category]
+                                : selected.filter((selectedCategory) => selectedCategory !== category))
+                            }}
+                          />
+                          <span>{category}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {categoryFilters.length > 0 && (
+                      <button className="clear-category-filters" type="button" onClick={() => setCategoryFilters([])}>
+                        Clear categories
+                      </button>
+                    )}
+                  </fieldset>
+                  {locationsStatus === 'ready' && (
+                    <p className="location-result-count" role="status">
+                      {visibleLocations.length} of {locations.length} locations
+                    </p>
+                  )}
+                </section>
+                {locationsStatus === 'loading' && <p className="map-feedback" role="status">Loading locations…</p>}
+                {locationsStatus === 'error' && <p className="map-feedback map-feedback--error" role="alert">{locationsError}</p>}
+                {locationsStatus === 'ready' && locations.length === 0 && (
+                  <p className="map-feedback" role="status">No locations have been added yet.</p>
+                )}
+                {locationsStatus === 'ready' && locations.length > 0 && visibleLocations.length === 0 && (
+                  <p className="map-feedback" role="status">No locations match those filters.</p>
+                )}
+              </>
+            )}
+
+            {activePanelTab === 'create' && (
+            <>
+              {adminStatus === 'admin' ? (
+              <form className="add-location-form" onSubmit={handleAddLocation}>
               <label>
                 Name
                 <input
@@ -240,53 +326,31 @@ export default function Map({ user, onRequestLogin }) {
                 Category
                 <select name="category" value={formData.category} onChange={handleInputChange}>
                   {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>))
-                  }
+                    <option key={category} value={category}>{category}</option>
+                  ))}
                 </select>
               </label>
 
-              {(timeSensitiveCategories.includes(formData.category)) &&
-              (<><label>
-                Start Date
-                <input
-                  name="startDate"
-                  type="date"
-                  value={formData.startDate}
-                  onChange={handleInputChange}
-                />
-              </label>
-
-              <label>
-                Start Time
-                <input
-                  name="startTime"
-                  type="time"
-                  value={formData.startTime}
-                  onChange={handleInputChange}
-                />
-              </label>
-
-              <label>
-                End Date
-                <input
-                  name="endDate"
-                  type="date"
-                  value={formData.endDate}
-                  onChange={handleInputChange}
-                />
-              </label>
-
-              <label>
-                End Time
-                <input
-                  name="endTime"
-                  type="time"
-                  value={formData.endTime}
-                  onChange={handleInputChange}
-                />
-              </label></>)}
+              {timeSensitiveCategories.includes(formData.category) && (
+                <>
+                  <label>
+                    Start Date
+                    <input name="startDate" type="date" value={formData.startDate} onChange={handleInputChange} />
+                  </label>
+                  <label>
+                    Start Time
+                    <input name="startTime" type="time" value={formData.startTime} onChange={handleInputChange} />
+                  </label>
+                  <label>
+                    End Date
+                    <input name="endDate" type="date" value={formData.endDate} onChange={handleInputChange} />
+                  </label>
+                  <label>
+                    End Time
+                    <input name="endTime" type="time" value={formData.endTime} onChange={handleInputChange} />
+                  </label>
+                </>
+              )}
 
               <label>
                 Description
@@ -317,12 +381,10 @@ export default function Map({ user, onRequestLogin }) {
                 {adminStatus === 'error' && <p>Admin access could not be verified. Check the Firestore rules and try again.</p>}
                 {adminStatus === 'unavailable' && <p>Firestore is not configured. Add Firebase project settings to enable shared locations.</p>}
               </div>
+              )}
+            </>
             )}
-            {locationsStatus === 'loading' && <p className="map-feedback" role="status">Loading locations…</p>}
-            {locationsStatus === 'error' && <p className="map-feedback map-feedback--error" role="alert">{locationsError}</p>}
-            {locationsStatus === 'ready' && locations.length === 0 && (
-              <p className="map-feedback" role="status">No locations have been added yet.</p>
-            )}
+            </div>
           </aside>
         )}
 
@@ -351,7 +413,7 @@ export default function Map({ user, onRequestLogin }) {
               </Marker>
             )}
 
-            {locations.map((location) => (
+            {visibleLocations.map((location) => (
               <Marker key={location.id} position={[location.lat, location.lng]} icon={categoryIcons[location.category] || defaultIcon}>
                 <Popup>
                   <div className="popup-card">
