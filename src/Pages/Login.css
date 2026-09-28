@@ -1,0 +1,136 @@
+.login-backdrop {
+	position: fixed;
+	z-index: 2000;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	padding: 1.25rem;
+	background: rgba(22, 36, 28, 0.48);
+	backdrop-filter: blur(5px);
+}
+
+.login-dialog {
+	position: relative;
+	width: min(100%, 440px);
+	padding: clamp(2rem, 7vw, 3.2rem);
+	border: 1px solid #e1e5dc;
+	background: #f8f8f3;
+	box-shadow: 0 28px 90px rgba(16, 30, 21, 0.25);
+	animation: dialog-arrive 180ms ease-out both;
+}
+
+.login-close {
+	position: absolute;
+	top: 0.85rem;
+	right: 0.9rem;
+	width: 2.25rem;
+	aspect-ratio: 1;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: #647064;
+	font-size: 1.6rem;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.login-close:hover {
+	background: #e9ede5;
+}
+
+.login-mark {
+	display: grid;
+	width: 2.5rem;
+	aspect-ratio: 1;
+	place-items: center;
+	margin-bottom: 1.8rem;
+	border-radius: 50% 50% 50% 12%;
+	background: #d7a33d;
+	color: #23392f;
+	font-family: Georgia, serif;
+	font-size: 1.5rem;
+	font-weight: 700;
+	transform: rotate(-8deg);
+}
+
+.login-eyebrow {
+	margin: 0;
+	color: #59765b;
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+}
+
+.login-dialog h2 {
+	margin: 0.75rem 0;
+	color: #26372c;
+	font-family: Manrope, sans-serif;
+	font-size: clamp(1.8rem, 6vw, 2.3rem);
+	font-weight: 700;
+	line-height: 1.18;
+}
+
+.login-intro {
+	margin: 0;
+	color: #68756a;
+	font-size: 0.9rem;
+	line-height: 1.7;
+}
+
+.google-sign-in {
+	display: flex;
+	width: 100%;
+	min-height: 3.4rem;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.8rem;
+	margin-top: 1.7rem;
+	padding: 0.8rem 1rem;
+	border: 1px solid #d7ddd5;
+	border-radius: 4px;
+	background: #fff;
+	color: #26372c;
+	font-size: 0.88rem;
+	font-weight: 650;
+	cursor: pointer;
+	transition: border-color 150ms ease, background 150ms ease;
+}
+
+.google-sign-in:hover:not(:disabled) {
+	border-color: #91ad83;
+	background: #fbfcf8;
+}
+
+.google-sign-in:disabled {
+	cursor: not-allowed;
+	opacity: 0.62;
+}
+
+.google-mark {
+	color: #4285f4;
+	font-family: Arial, sans-serif;
+	font-size: 1.2rem;
+	font-weight: 700;
+}
+
+.login-message {
+	margin: 0.9rem 0 0;
+	padding: 0.75rem 0.85rem;
+	border-left: 3px solid #d7a33d;
+	background: #f0f1e9;
+	color: #48584b;
+	font-size: 0.78rem;
+	line-height: 1.55;
+}
+
+.login-terms {
+	margin: 1.2rem 0 0;
+	color: #8a9488;
+	font-size: 0.74rem;
+}
+
+@keyframes dialog-arrive {
+	from { opacity: 0; transform: translateY(8px); }
+	to { opacity: 1; transform: translateY(0); }
+}

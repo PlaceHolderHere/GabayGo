@@ -1,0 +1,60 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admin/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admin/$(request.auth.uid)).data.enabled == true;
+    }
+
+    function validLocation(data) {
+      return data.keys().hasAll([
+          'name', 'category', 'description', 'lat', 'lng',
+          'startDate', 'startTime', 'endDate', 'endTime',
+          'createdBy', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'name', 'category', 'description', 'lat', 'lng',
+          'startDate', 'startTime', 'endDate', 'endTime',
+          'createdBy', 'createdAt'
+        ])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 120
+        && data.category in ['Location', 'Outage', 'Service', 'Marketplace', 'Report']
+        && data.description is string
+        && data.description.size() <= 1000
+        && (data.lat is int || data.lat is float)
+        && data.lat >= -90
+        && data.lat <= 90
+        && (data.lng is int || data.lng is float)
+        && data.lng >= -180
+        && data.lng <= 180
+        && (data.startDate == null || data.startDate is string)
+        && (data.startTime == null || data.startTime is string)
+        && (data.endDate == null || data.endDate is string)
+        && (data.endTime == null || data.endTime is string)
+        && data.createdBy is string
+        && data.createdAt is timestamp;
+    }
+
+    match /admin/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+
+    match /Locations/{locationId} {
+      allow read: if true;
+      allow create: if isAdmin()
+        && validLocation(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update: if isAdmin()
+        && validLocation(request.resource.data)
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
+    }
+  }
+}
