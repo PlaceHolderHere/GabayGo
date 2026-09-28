@@ -277,6 +277,35 @@
   line-height: 1.5;
 }
 
+.popup-delete-button {
+  align-self: flex-start;
+  margin-top: 0.4rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid #e4b9ad;
+  border-radius: 3px;
+  background: #fff8f6;
+  color: #8c3f30;
+  font-size: 0.76rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.popup-delete-button:hover:not(:disabled) {
+  background: #fbe8e2;
+}
+
+.popup-delete-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.popup-delete-error {
+  margin: 0;
+  color: #8c3f30;
+  font-size: 0.73rem;
+  line-height: 1.4;
+}
+
 .popup-card--temporary span {
   color: #b45309;
 }

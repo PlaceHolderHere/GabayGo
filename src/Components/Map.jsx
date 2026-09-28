@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMapEvents } from 'react-leaflet';
-import { addDoc, collection, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import L from 'leaflet';
 import { db } from '../firebase';
 import 'leaflet/dist/leaflet.css';
@@ -67,6 +67,7 @@ export default function Map({ user, onRequestLogin }) {
   const [locationsError, setLocationsError] = useState('');
   const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' });
   const [saveError, setSaveError] = useState('');
+  const [deleteFeedback, setDeleteFeedback] = useState({ locationId: null, status: '', error: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
   const [selectedPosition, setSelectedPosition] = useState(null);
@@ -177,6 +178,24 @@ export default function Map({ user, onRequestLogin }) {
       setSaveError('This location could not be saved. Check your admin access and Firestore rules.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteLocation = async (location) => {
+    if (!db || !user || adminStatus !== 'admin') return;
+    if (!window.confirm(`Delete "${location.name}"? This cannot be undone.`)) return;
+
+    setDeleteFeedback({ locationId: location.id, status: 'deleting', error: '' });
+
+    try {
+      await deleteDoc(doc(db, 'Locations', location.id));
+      setDeleteFeedback({ locationId: null, status: '', error: '' });
+    } catch {
+      setDeleteFeedback({
+        locationId: location.id,
+        status: 'error',
+        error: 'This location could not be deleted. Check your admin access and Firestore rules.',
+      });
     }
   };
 
@@ -351,6 +370,27 @@ export default function Map({ user, onRequestLogin }) {
                       <>
                         <p><strong>Date:</strong> {location.startDate}</p>
                         <p><strong>Time:</strong> {location.startTime}</p>
+                      </>
+                    )}
+
+                    {adminStatus === 'admin' && (
+                      <>
+                        <button
+                          className="popup-delete-button"
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleDeleteLocation(location);
+                          }}
+                          disabled={deleteFeedback.locationId === location.id && deleteFeedback.status === 'deleting'}
+                        >
+                          {deleteFeedback.locationId === location.id && deleteFeedback.status === 'deleting'
+                            ? 'Deleting…'
+                            : 'Delete location'}
+                        </button>
+                        {deleteFeedback.locationId === location.id && deleteFeedback.error && (
+                          <p className="popup-delete-error" role="alert">{deleteFeedback.error}</p>
+                        )}
                       </>
                     )}
                   </div>
