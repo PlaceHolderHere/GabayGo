@@ -40,6 +40,8 @@ const temporaryLocationIcon = new CustomIcon({
 
 // INITIAL LOCATIONS
 const categories = ['Location', 'Outage', 'Service', 'Marketplace', 'Report']
+const timeSensitiveCategories = ['Outage', 'Service']
+const timeStampedCategories = ['Report']
 const categoryIcons = {
     'Location': defaultIcon, 
     'Outage': outageIcon, 
@@ -87,7 +89,6 @@ export default function Map() {
 
   // Updates selected position
   const handleMapClick = (latlng) => {
-    console.log(latlng);
     setSelectedPosition(latlng);
   };
 
@@ -115,7 +116,26 @@ export default function Map() {
       description: formData.description.trim() || 'New location added by the user.',
       lat: selectedPosition.lat,
       lng: selectedPosition.lng,
+      startDate: null,
+      startTime: null,
+      endDate: null,
+      endTime: null,
     };
+
+    // If the category is time-sensitive, add the start and end date/time to the new location
+    if (timeSensitiveCategories.includes(formData.category)) {
+      newLocation.startDate = formData.startDate;
+      newLocation.startTime = formData.startTime;
+      newLocation.endDate = formData.endDate;
+      newLocation.endTime = formData.endTime;
+    }
+
+    // If the category is time-stamped, add the current date and time to the new location
+    if (timeStampedCategories.includes(formData.category)) {
+        const now = new Date();
+        newLocation.startDate = now.toISOString().split('T')[0]; // Current date in YYYY-MM-DD format
+        newLocation.startTime = now.toTimeString().split(' ')[0]; // Current time in HH:MM:SS format
+    }
 
     setLocations((prev) => [...prev, newLocation]);
     setFormData({
@@ -158,6 +178,47 @@ export default function Map() {
             }
             </select>
           </label>
+          
+          {(timeSensitiveCategories.includes(formData.category)) && 
+          (<><label>
+            Start Date
+            <input
+              name="startDate"
+              type="date"
+              value={formData.startDate}
+              onChange={handleInputChange}
+            />
+          </label>
+
+          <label>
+            Start Time
+            <input
+              name="startTime"
+              type="time"
+              value={formData.startTime}
+              onChange={handleInputChange}
+            />
+          </label>
+
+          <label>
+            End Date
+            <input
+              name="endDate"
+              type="date"
+              value={formData.endDate}
+              onChange={handleInputChange}
+            />
+          </label>
+
+          <label>
+            End Time
+            <input
+              name="endTime"
+              type="time"
+              value={formData.endTime}
+              onChange={handleInputChange}
+            />
+          </label></>)}
 
           <label>
             Description
@@ -208,6 +269,22 @@ export default function Map() {
                   <strong>{location.name}</strong>
                   <span>{location.category}</span>
                   <p>{location.description}</p>
+
+                  {timeSensitiveCategories.includes(location.category) && (
+                    <>
+                        <p><strong>Date:</strong> {location.startDate} - {location.endDate}</p>
+                        <p><strong>Time:</strong> {location.startTime} - {location.endTime}</p>
+                    </>
+                  )}
+
+                    {timeStampedCategories.includes(location.category) && (
+                        <>
+                            <p><strong>Date:</strong> {location.startDate}</p>
+                            <p><strong>Time:</strong> {location.startTime}</p>
+                        </>
+                    )}
+                  
+                  
                 </div>
               </Popup>
             </Marker>
