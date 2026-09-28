@@ -61,7 +61,7 @@ function ClickHandler({ onMapClick }) {
   return null;
 }
 
-export default function Map({ user, onRequestLogin }) {
+export default function Map({ user, onRequestLogin, onLocationsChange }) {
   const [locations, setLocations] = useState([]);
   const [locationsStatus, setLocationsStatus] = useState(db ? 'loading' : 'unavailable');
   const [locationsError, setLocationsError] = useState('');
@@ -104,13 +104,14 @@ export default function Map({ user, onRequestLogin }) {
         .map((locationDoc) => ({ id: locationDoc.id, ...locationDoc.data() }))
         .filter((location) => Number.isFinite(location.lat) && Number.isFinite(location.lng));
       setLocations(nextLocations);
+      onLocationsChange(nextLocations);
       setLocationsStatus('ready');
       setLocationsError('');
     }, () => {
       setLocationsStatus('error');
       setLocationsError('Locations could not be loaded. Check the Firestore database and its read rules.');
     });
-  }, []);
+  }, [onLocationsChange]);
 
   useEffect(() => {
     if (!db || !userId) return undefined;

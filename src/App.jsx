@@ -9,6 +9,7 @@ import Login from './Pages/Login'
 function App() {
   const [user, setUser] = useState(null)
   const [loginOpen, setLoginOpen] = useState(false)
+  const [locations, setLocations] = useState([])
 
   useEffect(() => {
     if (!auth) return undefined
@@ -20,10 +21,15 @@ function App() {
     <div className="app-shell">
       <Navbar
         user={user}
+        locations={locations}
         onLogin={() => setLoginOpen(true)}
         onSignOut={() => signOut(auth)}
       />
-      <Map user={user} onRequestLogin={() => setLoginOpen(true)} />
+      <Map
+        user={user}
+        onRequestLogin={() => setLoginOpen(true)}
+        onLocationsChange={setLocations}
+      />
       {loginOpen && <Login onClose={() => setLoginOpen(false)} />}
     </div>
   )
