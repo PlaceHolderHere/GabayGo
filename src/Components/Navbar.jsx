@@ -1,3 +1,4 @@
+import logo from '../assets/Logo.svg'
 import './Navbar.css'
 
 export default function Navbar({ user, onLogin, onSignOut }) {
@@ -5,8 +6,7 @@ export default function Navbar({ user, onLogin, onSignOut }) {
     <header className="site-nav">
       <div className="site-nav-left">
         <a className="site-brand" href="/" aria-label="GabayGo home">
-          <span className="site-brand-mark" aria-hidden="true">g</span>
-          <span>GabayGo</span>
+          <img className="site-brand-logo" src={logo} alt="GabayGo" />
         </a>
         <nav className="site-nav-links" aria-label="Main navigation">
           <a className="nav-map-link" href="#map">Map</a>

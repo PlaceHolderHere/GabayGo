@@ -19,25 +19,15 @@
 .site-brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.7rem;
   color: var(--color-brown);
-  font-family: Manrope, sans-serif;
-  font-size: 1.12rem;
-  font-weight: 800;
   text-decoration: none;
 }
 
-.site-brand-mark {
-  display: grid;
-  width: 2rem;
-  aspect-ratio: 1;
-  place-items: center;
-  border-radius: 50% 50% 50% 12%;
-  background: var(--color-gold);
-  color: var(--color-brown);
-  font-family: Georgia, serif;
-  font-size: 1.2rem;
-  transform: rotate(-8deg);
+.site-brand-logo {
+  display: block;
+  width: auto;
+  height: 2.65rem;
+  object-fit: contain;
 }
 
 .site-nav-links,
@@ -98,8 +88,12 @@
   }
 
   .site-brand {
-    gap: 0.5rem;
-    font-size: 1rem;
+    max-width: 45vw;
+  }
+
+  .site-brand-logo {
+    max-width: 100%;
+    height: 2.35rem;
   }
 
   .site-nav-links,
