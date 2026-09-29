@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Circle, MapContainer, Marker, Popup, TileLayer, useMapEvents } from 'react-leaflet';
+import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMapEvents } from 'react-leaflet';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { categoryIcons, defaultIcon, temporaryLocationIcon } from './mapIcons';
@@ -11,6 +11,42 @@ const categories = ['Location', 'Outage', 'Service', 'Marketplace', 'Report', 'H
 const timeSensitiveCategories = ['Marketplace', 'Outage', 'Service']
 const timeStampedCategories = ['Report']
 const defaultHazardRadius = 500
+
+function formatRouteDistance(meters) {
+  return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;
+}
+
+function formatRouteDuration(seconds) {
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes ? `${hours} hr ${remainingMinutes} min` : `${hours} hr`;
+}
+
+function describeRouteStep(step) {
+  const { type, modifier } = step.maneuver || {};
+  const name = step.name ? ` onto ${step.name}` : '';
+  const modifierText = modifier ? ` ${modifier}` : '';
+  const instructions = {
+    depart: 'Start',
+    arrive: 'Arrive at your destination',
+    turn: `Turn${modifierText}`,
+    'new name': 'Continue',
+    merge: 'Merge',
+    'on ramp': 'Take the ramp',
+    'off ramp': 'Take the exit',
+    fork: `Keep${modifierText}`,
+    'end of road': `Turn${modifierText}`,
+    continue: 'Continue',
+    roundabout: 'Enter the roundabout',
+    rotary: 'Enter the rotary',
+    'roundabout turn': 'Take the roundabout exit',
+    notification: 'Continue',
+  };
+  const instruction = instructions[type] || 'Continue';
+  return `${instruction}${['depart', 'arrive'].includes(type) ? '' : name}`;
+}
 
 function parseLocationDate(date, time) {
   if (!date) return null;
@@ -72,6 +108,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
   const [categoryFilters, setCategoryFilters] = useState([]);
   const [selectedPosition, setSelectedPosition] = useState(null);
   const [selectedHazardId, setSelectedHazardId] = useState(null);
+  const [routeState, setRouteState] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     category: categories[0],
@@ -130,13 +167,122 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
     });
   }, [userId]);
 
+  useEffect(() => {
+    if (routeState?.status !== 'loading' || !routeState.destination) return undefined;
+
+    const controller = new AbortController();
+    const { origin, destination } = routeState;
+    const coordinates = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=true`;
+
+    fetch(url, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error('The directions service is unavailable. Please try again.');
+        return response.json();
+      })
+      .then((data) => {
+        const route = data.routes?.[0];
+        if (data.code !== 'Ok' || !route) throw new Error('No driving route was found between these places.');
+        const steps = route.legs.flatMap((leg) => leg.steps.map((step) => ({
+          instruction: describeRouteStep(step),
+          distance: step.distance,
+        })));
+        setRouteState((current) => current?.origin === origin && current?.destination === destination
+          ? {
+            ...current,
+            status: 'ready',
+            geometry: route.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
+            distance: route.distance,
+            duration: route.duration,
+            steps,
+          }
+          : current);
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') return;
+        setRouteState((current) => current?.origin === origin && current?.destination === destination
+          ? { ...current, status: 'error', error: error.message || 'Directions could not be loaded.' }
+          : current);
+      });
+
+    return () => controller.abort();
+  }, [routeState]);
+
   // Updates selected position
   const handleMapClick = (latlng) => {
+    if (routeState) {
+      if (routeState.status === 'selecting') {
+        setRouteState((current) => ({
+          ...current,
+          destination: { lat: latlng.lat, lng: latlng.lng, name: 'Map point' },
+          status: 'loading',
+        }));
+        setActivePanelTab('search');
+        setPanelOpen(true);
+      }
+      return;
+    }
     setSelectedHazardId(null);
     if (!canCreateMarkers) return;
     setSelectedPosition(latlng);
     setActivePanelTab('create');
     setPanelOpen(true);
+  };
+
+  const handleStartRoute = (location) => {
+    setRouteState({
+      origin: { lat: location.lat, lng: location.lng, name: location.name },
+      destination: null,
+      status: 'selecting',
+    });
+    setSelectedPosition(null);
+    setEditingLocationId(null);
+    setActivePanelTab('search');
+    setPanelOpen(true);
+  };
+
+  const handleStartRouteFromCurrentLocation = (destinationLocation = null) => {
+    const origin = { name: 'Your location' };
+    const destination = destinationLocation
+      ? { lat: destinationLocation.lat, lng: destinationLocation.lng, name: destinationLocation.name }
+      : null;
+    setRouteState({ origin, destination, status: 'locating' });
+    setSelectedPosition(null);
+    setEditingLocationId(null);
+    setActivePanelTab('search');
+    setPanelOpen(true);
+
+    const handleLocationError = (message) => {
+      setRouteState((current) => current?.origin === origin
+        ? { ...current, status: 'error', error: message }
+        : current);
+    };
+
+    if (!navigator.geolocation) {
+      handleLocationError('Your browser does not support location access.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setRouteState((current) => current?.origin === origin
+          ? {
+            ...current,
+            origin: { ...origin, lat: coords.latitude, lng: coords.longitude },
+            status: current.destination ? 'loading' : 'selecting',
+          }
+          : current);
+      },
+      (error) => {
+        const message = error.code === error.PERMISSION_DENIED
+          ? 'Location access was denied. Allow location access in your browser and try again.'
+          : error.code === error.TIMEOUT
+            ? 'Your location could not be found in time. Please try again.'
+            : 'Your current location is unavailable. Please try again.';
+        handleLocationError(message);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+    );
   };
 
   // Updates formData when user inputs a change
@@ -362,6 +508,54 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
             <div className="sidebar-view" aria-label={activePanelTab === 'search' ? 'Search locations' : 'Create a location'}>
             {activePanelTab === 'search' && (
               <>
+                {routeState && (
+                  <section className="route-panel" aria-label="Driving directions">
+                    <div className="route-panel-header">
+                      <h3>Driving directions</h3>
+                      <button type="button" onClick={() => setRouteState(null)}>Cancel</button>
+                    </div>
+                    <p className="route-endpoint"><strong>From</strong> {routeState.origin?.name || 'Your location'}</p>
+                    {routeState.destination && (
+                      <p className="route-endpoint"><strong>To</strong> {routeState.destination.name}</p>
+                    )}
+                    {routeState.status === 'locating' && (
+                      <p className="map-feedback" role="status">Finding your current location…</p>
+                    )}
+                    {routeState.status === 'selecting' && (
+                      <p className="map-feedback" role="status">Click the map to choose your destination.</p>
+                    )}
+                    {routeState.status === 'loading' && (
+                      <p className="map-feedback" role="status">Finding a driving route…</p>
+                    )}
+                    {routeState.status === 'error' && (
+                      <p className="map-feedback map-feedback--error" role="alert">{routeState.error}</p>
+                    )}
+                    {routeState.status === 'ready' && (
+                      <>
+                        <p className="route-summary" role="status">
+                          {formatRouteDistance(routeState.distance)} · {formatRouteDuration(routeState.duration)}
+                        </p>
+                        <ol className="route-steps">
+                          {routeState.steps.map((step, index) => (
+                            <li key={`${step.instruction}-${index}`}>
+                              <span>{step.instruction}</span>
+                              <small>{formatRouteDistance(step.distance)}</small>
+                            </li>
+                          ))}
+                        </ol>
+                      </>
+                    )}
+                  </section>
+                )}
+                {!routeState && (
+                  <button
+                    className="route-start-button"
+                    type="button"
+                    onClick={() => handleStartRouteFromCurrentLocation()}
+                  >
+                    Directions from my location
+                  </button>
+                )}
                 <section className="location-filters" aria-label="Search and filter locations">
                   <label>
                     Search locations
@@ -645,6 +839,27 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
               />
             )}
 
+            {routeState?.status === 'ready' && (
+              <Polyline
+                positions={routeState.geometry}
+                pathOptions={{ color: '#236b5c', weight: 5, opacity: 0.88 }}
+              />
+            )}
+
+            {routeState?.destination && (
+              <Marker
+                position={[routeState.destination.lat, routeState.destination.lng]}
+                icon={temporaryLocationIcon}
+              >
+                <Popup>
+                  <div className="popup-card popup-card--temporary">
+                    <strong>Destination</strong>
+                    <span>{routeState.destination.name}</span>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
+
             {visibleLocations.filter((location) => location.category === 'Hazard' && selectedHazardId === location.id).map((location) => (
               <Circle
                 key={`hazard-radius-${location.id}`}
@@ -683,6 +898,27 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
                     {location.createdBy && (
                       <p className="popup-created-by">Added by account: {location.createdBy}</p>
                     )}
+
+                    <button
+                      className="popup-resolve-button"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleStartRoute(location);
+                      }}
+                    >
+                      Directions from here
+                    </button>
+                    <button
+                      className="popup-resolve-button"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleStartRouteFromCurrentLocation(location);
+                      }}
+                    >
+                      Directions from my location
+                    </button>
 
                     {timeSensitiveCategories.includes(location.category) && (
                       <>
