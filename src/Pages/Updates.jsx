@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import './Updates.css'
 
 const scheduledCategories = ['Marketplace', 'Outage', 'Service']
-const allCategories = ['Location', 'Marketplace', 'Outage', 'Service', 'Report']
+const allCategories = ['Marketplace', 'Outage', 'Service', 'Report']
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const reportStatuses = ['Submitted', 'Under review', 'Resolved']
 
@@ -63,14 +63,6 @@ function getLocationEvents(locations) {
   const events = []
 
   locations.forEach((location) => {
-    if (location.category === 'Location') {
-      const addedDate = timestampDateKey(location.createdAt)
-      const addedEvent = makeEvent(location, 'added', addedDate, {
-        activity: 'Location added',
-      })
-      if (addedEvent) events.push(addedEvent)
-    }
-
     if (scheduledCategories.includes(location.category)) {
       const startDate = location.startDate || location.endDate
       const endDate = location.endDate || location.startDate
@@ -421,7 +413,7 @@ export default function Updates({ locations, locationsStatus, locationsError }) 
         </div>
         <div className="updates-legend" aria-label="Event categories">
           {[
-            ['location', 'Location'], ['marketplace', 'Marketplace'], ['outage', 'Outage'], ['service', 'Service'], ['report', 'Report'],
+            ['marketplace', 'Marketplace'], ['outage', 'Outage'], ['service', 'Service'], ['report', 'Report'],
           ].map(([category, label]) => (
             <span className={`updates-legend-item updates-legend-item--${category}`} key={category}>
               <i aria-hidden="true" />{label}

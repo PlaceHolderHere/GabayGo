@@ -17,7 +17,7 @@ service cloud.firestore {
         && data.keys().hasOnly([
           'name', 'category', 'description', 'lat', 'lng',
           'startDate', 'startTime', 'endDate', 'endTime',
-          'createdBy', 'createdAt', 'status', 'underReviewAt',
+          'createdBy', 'createdAt', 'status', 'officeHours', 'contactInfo', 'underReviewAt',
           'underReviewBy', 'resolvedAt', 'resolvedBy'
         ])
         && data.name is string
@@ -26,6 +26,8 @@ service cloud.firestore {
         && data.category in ['Location', 'Outage', 'Service', 'Marketplace', 'Report']
         && data.description is string
         && data.description.size() <= 1000
+        && (!data.keys().hasAny(['officeHours']) || (data.officeHours is string && data.officeHours.size() <= 500))
+        && (!data.keys().hasAny(['contactInfo']) || (data.contactInfo is string && data.contactInfo.size() <= 500))
         && (data.lat is int || data.lat is float)
         && data.lat >= -90
         && data.lat <= 90

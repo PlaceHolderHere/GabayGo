@@ -26,6 +26,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
   const [deleteFeedback, setDeleteFeedback] = useState({ locationId: null, status: '', error: '' });
   const [reportStatusFeedback, setReportStatusFeedback] = useState({ locationId: null, status: '', error: '' });
   const [isSaving, setIsSaving] = useState(false);
+  const [editingLocationId, setEditingLocationId] = useState(null);
   const [panelOpen, setPanelOpen] = useState(true);
   const [activePanelTab, setActivePanelTab] = useState('search');
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,6 +36,8 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
     name: '',
     category: categories[0],
     description: '',
+    officeHours: '',
+    contactInfo: '',
     startDate: '',
     startTime: '',
     endDate: '',
@@ -92,44 +95,59 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
   const handleAddLocation = async (event) => {
     event.preventDefault();
 
-    if (!db || !user || !canCreateMarkers || !selectedPosition || !formData.name.trim()) {
+    if (!db || !user || !canCreateMarkers || (!selectedPosition && !editingLocationId) || !formData.name.trim()) {
       return;
     }
 
-    const newLocation = {
+    const locationDetails = {
       name: formData.name.trim(),
-      category: selectedFormCategory,
-      description: formData.description.trim() || 'New location added by the user.',
-      lat: selectedPosition.lat,
-      lng: selectedPosition.lng,
-      startDate: formData.startDate || null,
-      startTime: formData.startTime || null,
-      endDate: formData.endDate || null,
-      endTime: formData.endTime || null,
-      createdBy: user.uid,
-      createdAt: serverTimestamp(),
-      status: selectedFormCategory === 'Report' ? 'Submitted' : null,
-      underReviewAt: null,
-      underReviewBy: null,
-      resolvedAt: null,
-      resolvedBy: null,
+      description: formData.description.trim() || (editingLocationId ? '' : 'New location added by the user.'),
     };
-
-    if (timeStampedCategories.includes(selectedFormCategory)) {
-      const now = new Date();
-      newLocation.startDate = now.toISOString().split('T')[0];
-      newLocation.startTime = now.toTimeString().split(' ')[0];
+    if (editingLocationId || selectedFormCategory === 'Location') {
+      locationDetails.officeHours = formData.officeHours.trim();
+      locationDetails.contactInfo = formData.contactInfo.trim();
     }
 
     setIsSaving(true);
     setSaveError('');
 
     try {
-      await addDoc(collection(db, 'Locations'), newLocation);
+      if (editingLocationId) {
+        await updateDoc(doc(db, 'Locations', editingLocationId), locationDetails);
+        setEditingLocationId(null);
+      } else {
+        const newLocation = {
+          ...locationDetails,
+          category: selectedFormCategory,
+          lat: selectedPosition.lat,
+          lng: selectedPosition.lng,
+          startDate: formData.startDate || null,
+          startTime: formData.startTime || null,
+          endDate: formData.endDate || null,
+          endTime: formData.endTime || null,
+          createdBy: user.uid,
+          createdAt: serverTimestamp(),
+          status: selectedFormCategory === 'Report' ? 'Submitted' : null,
+          underReviewAt: null,
+          underReviewBy: null,
+          resolvedAt: null,
+          resolvedBy: null,
+        };
+
+        if (timeStampedCategories.includes(selectedFormCategory)) {
+          const now = new Date();
+          newLocation.startDate = now.toISOString().split('T')[0];
+          newLocation.startTime = now.toTimeString().split(' ')[0];
+        }
+
+        await addDoc(collection(db, 'Locations'), newLocation);
+      }
       setFormData({
         name: '',
         category: isAdmin ? categories[0] : 'Report',
         description: '',
+        officeHours: '',
+        contactInfo: '',
         startDate: '',
         startTime: '',
         endDate: '',
@@ -141,6 +159,39 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleEditLocation = (location) => {
+    setFormData({
+      name: location.name || '',
+      category: 'Location',
+      description: location.description || '',
+      officeHours: location.officeHours || '',
+      contactInfo: location.contactInfo || '',
+      startDate: '',
+      startTime: '',
+      endDate: '',
+      endTime: '',
+    });
+    setEditingLocationId(location.id);
+    setSelectedPosition(null);
+    setActivePanelTab('create');
+    setPanelOpen(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingLocationId(null);
+    setFormData({
+      name: '',
+      category: isAdmin ? categories[0] : 'Report',
+      description: '',
+      officeHours: '',
+      contactInfo: '',
+      startDate: '',
+      startTime: '',
+      endDate: '',
+      endTime: '',
+    });
   };
 
   const handleDeleteLocation = async (location) => {
@@ -292,6 +343,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
             <>
               {canCreateMarkers ? (
               <form className="add-location-form" onSubmit={handleAddLocation}>
+              <h3>{editingLocationId ? 'Edit location' : 'Add a location'}</h3>
               {!isAdmin && <p className="report-access-note">You can submit a report. Other location types are reserved for admins.</p>}
               <label>
                 Name
@@ -306,7 +358,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
 
               <label>
                 Category
-                <select name="category" value={selectedFormCategory} onChange={handleInputChange} disabled={!isAdmin}>
+                <select name="category" value={selectedFormCategory} onChange={handleInputChange} disabled={!isAdmin || Boolean(editingLocationId)}>
                   {availableCategories.map((category) => (
                     <option key={category} value={category}>{category}</option>
                   ))}
@@ -345,9 +397,37 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
                 />
               </label>
 
-              <button type="submit" disabled={!selectedPosition || !formData.name.trim() || isSaving}>
-                {isSaving ? (isAdmin ? 'Saving location…' : 'Submitting report…') : isAdmin ? 'Add Location' : 'Submit Report'}
+              {selectedFormCategory === 'Location' && (
+                <>
+                  <label>
+                    Office hours
+                    <textarea
+                      name="officeHours"
+                      value={formData.officeHours}
+                      onChange={handleInputChange}
+                      rows="2"
+                      maxLength="500"
+                      placeholder="e.g. Mon-Fri, 8:00 AM-5:00 PM"
+                    />
+                  </label>
+                  <label>
+                    Contact information
+                    <input
+                      type="text"
+                      name="contactInfo"
+                      value={formData.contactInfo}
+                      onChange={handleInputChange}
+                      maxLength="500"
+                      placeholder="Phone, email, or website"
+                    />
+                  </label>
+                </>
+              )}
+
+              <button type="submit" disabled={(!selectedPosition && !editingLocationId) || !formData.name.trim() || isSaving}>
+                {isSaving ? (isAdmin ? 'Saving location…' : 'Submitting report…') : editingLocationId ? 'Save changes' : isAdmin ? 'Add Location' : 'Submit Report'}
               </button>
+              {editingLocationId && <button type="button" onClick={handleCancelEdit}>Cancel edit</button>}
               {saveError && <p className="map-feedback map-feedback--error" role="alert">{saveError}</p>}
             </form>
             ) : (
@@ -402,6 +482,12 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
                     <strong>{location.name}</strong>
                     <span>{location.category}</span>
                     <p>{location.description}</p>
+                    {location.category === 'Location' && location.officeHours && (
+                      <p><strong>Office hours:</strong> {location.officeHours}</p>
+                    )}
+                    {location.category === 'Location' && location.contactInfo && (
+                      <p><strong>Contact:</strong> {location.contactInfo}</p>
+                    )}
                     {location.createdBy && (
                       <p className="popup-created-by">Added by account: {location.createdBy}</p>
                     )}
@@ -465,6 +551,18 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
 
                     {adminStatus === 'admin' && (
                       <>
+                        {location.category === 'Location' && (
+                          <button
+                            className="popup-resolve-button"
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleEditLocation(location);
+                            }}
+                          >
+                            Edit location
+                          </button>
+                        )}
                         <button
                           className="popup-delete-button"
                           type="button"
