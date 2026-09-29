@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -93,14 +93,13 @@ function ClickHandler({ onMapClick }) {
   return null;
 }
 
-function FocusLocation({ location, markerRef }) {
+function FocusLocation({ location }) {
   const map = useMap();
 
   useEffect(() => {
     if (!location) return;
     map.flyTo([location.lat, location.lng], Math.max(map.getZoom(), 17), { duration: 0.55 });
-    markerRef.current?.openPopup();
-  }, [location, map, markerRef]);
+  }, [location, map]);
 
   return null;
 }
@@ -120,8 +119,8 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
   const [categoryFilters, setCategoryFilters] = useState([]);
   const [selectedPosition, setSelectedPosition] = useState(null);
   const [selectedHazardId, setSelectedHazardId] = useState(null);
+  const [selectedLocationId, setSelectedLocationId] = useState(focusedLocationId || null);
   const [routeState, setRouteState] = useState(null);
-  const focusedMarkerRef = useRef(null);
   const [formData, setFormData] = useState({
     name: '',
     category: categories[0],
@@ -145,6 +144,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
   const canCreateMarkers = isAdmin || canCreateReports;
   const availableCategories = isAdmin ? categories : ['Report'];
   const selectedFormCategory = isAdmin ? formData.category : 'Report';
+  const selectedLocation = locations.find((location) => location.id === selectedLocationId) || null;
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
   const visibleLocations = locations.filter((location) => {
     const matchesCategory = categoryFilters.length === 0 || categoryFilters.includes(location.category);
@@ -236,6 +236,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
       return;
     }
     setSelectedHazardId(null);
+    setSelectedLocationId(null);
     if (!canCreateMarkers) return;
     setSelectedPosition(latlng);
     setActivePanelTab('create');
@@ -243,6 +244,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
   };
 
   const handleStartRoute = (location) => {
+    setSelectedLocationId(null);
     setRouteState({
       origin: { lat: location.lat, lng: location.lng, name: location.name },
       destination: null,
@@ -255,6 +257,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
   };
 
   const handleStartRouteFromCurrentLocation = (destinationLocation = null) => {
+    setSelectedLocationId(null);
     const origin = { name: 'Your location' };
     const destination = destinationLocation
       ? { lat: destinationLocation.lat, lng: destinationLocation.lng, name: destinationLocation.name }
@@ -342,6 +345,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
       if (editingLocationId) {
         await updateDoc(doc(db, 'Locations', editingLocationId), locationDetails);
         setEditingLocationId(null);
+        setPanelOpen(false);
       } else {
         const newLocation = {
           ...locationDetails,
@@ -403,6 +407,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
       hazardRadius: String(location.hazardRadius || defaultHazardRadius),
     });
     setEditingLocationId(location.id);
+    setSelectedLocationId(location.id);
     setSelectedPosition(null);
     setActivePanelTab('create');
     setPanelOpen(true);
@@ -410,6 +415,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
 
   const handleCancelEdit = () => {
     setEditingLocationId(null);
+    setPanelOpen(false);
     setFormData({
       name: '',
       category: isAdmin ? categories[0] : 'Report',
@@ -476,7 +482,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
     <div className="map-page">
       <div className="map-stage" id="map">
         <button
-          className={`map-panel-toggle${panelOpen ? ' map-panel-toggle--panel-open' : ''}`}
+          className={`map-panel-toggle${panelOpen ? ' map-panel-toggle--panel-open' : ''}${editingLocationId ? ' map-panel-toggle--editing' : ''}`}
           type="button"
           aria-expanded={panelOpen}
           aria-controls="map-panel"
@@ -490,7 +496,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
         </button>
 
         {panelOpen && (
-          <aside className="map-panel" id="map-panel" aria-label="Add a location">
+          <aside className={`map-panel${editingLocationId ? ' map-panel--editing' : ''}`} id="map-panel" aria-label={editingLocationId ? 'Edit marker' : 'Add or search for a location'}>
             <div className="map-header">
               <div>
                 <p className="map-eyebrow">Community map</p>
@@ -750,6 +756,105 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
           </aside>
         )}
 
+        {selectedLocation && !editingLocationId && (
+          <aside className="marker-details-panel" aria-label={`Details for ${selectedLocation.name}`}>
+            <header className="marker-details-header">
+              <div>
+                <p className="map-eyebrow">{selectedLocation.category}</p>
+                <h2>{selectedLocation.name}</h2>
+              </div>
+              <button
+                className="marker-details-close"
+                type="button"
+                aria-label="Close location details"
+                onClick={() => {
+                  setSelectedLocationId(null);
+                  setSelectedHazardId(null);
+                }}
+              >
+                ×
+              </button>
+            </header>
+
+            {selectedLocation.description && (
+              <p className={selectedLocation.category === 'Hazard' ? 'marker-details-warning' : 'marker-details-description'}>
+                {selectedLocation.category === 'Hazard' && <strong>Warning: </strong>}
+                {selectedLocation.description}
+              </p>
+            )}
+            {selectedLocation.category === 'Hazard' && (
+              <dl className="marker-details-facts">
+                <div><dt>Coverage radius</dt><dd>{selectedLocation.hazardRadius || defaultHazardRadius} m</dd></div>
+                <div><dt>Last updated</dt><dd>{formatHazardUpdatedAt(selectedLocation)}</dd></div>
+              </dl>
+            )}
+            {selectedLocation.category === 'Location' && (selectedLocation.officeHours || selectedLocation.contactInfo) && (
+              <dl className="marker-details-facts">
+                {selectedLocation.officeHours && <div><dt>Office hours</dt><dd>{selectedLocation.officeHours}</dd></div>}
+                {selectedLocation.contactInfo && <div><dt>Contact</dt><dd>{selectedLocation.contactInfo}</dd></div>}
+              </dl>
+            )}
+            {timeSensitiveCategories.includes(selectedLocation.category) && (
+              <dl className="marker-details-facts">
+                <div><dt>Date</dt><dd>{selectedLocation.startDate || 'Not specified'}{selectedLocation.endDate ? ` – ${selectedLocation.endDate}` : ''}</dd></div>
+                <div><dt>Time</dt><dd>{selectedLocation.startTime || 'Not specified'}{selectedLocation.endTime ? ` – ${selectedLocation.endTime}` : ''}</dd></div>
+              </dl>
+            )}
+            {timeStampedCategories.includes(selectedLocation.category) && (
+              <dl className="marker-details-facts">
+                <div><dt>Opened</dt><dd>{selectedLocation.startDate || 'Not specified'}</dd></div>
+                <div><dt>Status</dt><dd>{selectedLocation.status || (selectedLocation.resolvedAt ? 'Resolved' : 'Submitted')}</dd></div>
+                {selectedLocation.resolvedAt && <div><dt>Resolved</dt><dd>{selectedLocation.resolvedAt.toDate().toLocaleString()}</dd></div>}
+              </dl>
+            )}
+            {selectedLocation.createdBy && <p className="marker-details-by">Added by account: {selectedLocation.createdBy}</p>}
+
+            <div className="marker-details-actions">
+              <button type="button" onClick={() => handleStartRoute(selectedLocation)}>Directions from here</button>
+              <button type="button" onClick={() => handleStartRouteFromCurrentLocation(selectedLocation)}>Directions from my location</button>
+            </div>
+
+            {isAdmin && selectedLocation.category === 'Report' && (
+              <div className="marker-details-actions">
+                {(selectedLocation.status || (selectedLocation.resolvedAt ? 'Resolved' : 'Submitted')) === 'Submitted' && (
+                  <button
+                    type="button"
+                    onClick={() => handleReportStatusChange(selectedLocation, 'Under review')}
+                    disabled={reportStatusFeedback.locationId === selectedLocation.id && reportStatusFeedback.status === 'updating'}
+                  >Mark under review</button>
+                )}
+                {(selectedLocation.status || (selectedLocation.resolvedAt ? 'Resolved' : 'Submitted')) === 'Under review' && (
+                  <button
+                    type="button"
+                    onClick={() => handleReportStatusChange(selectedLocation, 'Resolved')}
+                    disabled={reportStatusFeedback.locationId === selectedLocation.id && reportStatusFeedback.status === 'updating'}
+                  >Mark resolved</button>
+                )}
+                {reportStatusFeedback.locationId === selectedLocation.id && reportStatusFeedback.error && (
+                  <p className="popup-delete-error" role="alert">{reportStatusFeedback.error}</p>
+                )}
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className="marker-details-admin-actions">
+                <button type="button" onClick={() => handleEditLocation(selectedLocation)}>Edit marker</button>
+                <button
+                  className="popup-delete-button"
+                  type="button"
+                  onClick={() => handleDeleteLocation(selectedLocation)}
+                  disabled={deleteFeedback.locationId === selectedLocation.id && deleteFeedback.status === 'deleting'}
+                >
+                  {deleteFeedback.locationId === selectedLocation.id && deleteFeedback.status === 'deleting' ? 'Deleting…' : 'Delete location'}
+                </button>
+                {deleteFeedback.locationId === selectedLocation.id && deleteFeedback.error && (
+                  <p className="popup-delete-error" role="alert">{deleteFeedback.error}</p>
+                )}
+              </div>
+            )}
+          </aside>
+        )}
+
         <button
           className="notifications-toggle"
           type="button"
@@ -815,7 +920,6 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
           <MapContainer center={[7.0435, 125.5315]} zoom={16.5} scrollWheelZoom className="leaflet-map">
             <FocusLocation
               location={locations.find((location) => location.id === focusedLocationId)}
-              markerRef={focusedMarkerRef}
             />
             <TileLayer
               attribution='&copy; OpenStreetMap contributors'
@@ -890,143 +994,18 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
             {visibleLocations.map((location) => (
               <Marker
                 key={location.id}
-                ref={location.id === focusedLocationId ? focusedMarkerRef : undefined}
                 position={[location.lat, location.lng]}
                 icon={categoryIcons[location.category] || defaultIcon}
-                eventHandlers={location.category === 'Hazard' ? {
-                  click: () => setSelectedHazardId((selectedId) => selectedId === location.id ? null : location.id),
-                } : undefined}
+                eventHandlers={{
+                  click: () => {
+                    setSelectedLocationId(location.id);
+                    setSelectedHazardId(location.category === 'Hazard' ? location.id : null);
+                    setPanelOpen(false);
+                    setNotificationsOpen(false);
+                    setRouteState(null);
+                  },
+                }}
               >
-                <Popup>
-                  <div className="popup-card">
-                    <strong>{location.name}</strong>
-                    <span>{location.category}</span>
-                    {location.category === 'Hazard'
-                      ? <p className="popup-hazard-warning"><strong>Warning:</strong> {location.description}</p>
-                      : <p>{location.description}</p>}
-                    {location.category === 'Hazard' && (location.updatedAt?.toDate || location.createdAt?.toDate) && (
-                      <p><strong>Last updated:</strong> {formatHazardUpdatedAt(location)}</p>
-                    )}
-                    {location.category === 'Location' && location.officeHours && (
-                      <p><strong>Office hours:</strong> {location.officeHours}</p>
-                    )}
-                    {location.category === 'Location' && location.contactInfo && (
-                      <p><strong>Contact:</strong> {location.contactInfo}</p>
-                    )}
-                    {location.createdBy && (
-                      <p className="popup-created-by">Added by account: {location.createdBy}</p>
-                    )}
-
-                    <button
-                      className="popup-resolve-button"
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleStartRoute(location);
-                      }}
-                    >
-                      Directions from here
-                    </button>
-                    <button
-                      className="popup-resolve-button"
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleStartRouteFromCurrentLocation(location);
-                      }}
-                    >
-                      Directions from my location
-                    </button>
-
-                    {timeSensitiveCategories.includes(location.category) && (
-                      <>
-                        <p><strong>Date:</strong> {location.startDate} - {location.endDate}</p>
-                        <p><strong>Time:</strong> {location.startTime} - {location.endTime}</p>
-                      </>
-                    )}
-
-                    {timeStampedCategories.includes(location.category) && (
-                      <>
-                        <p><strong>Opened:</strong> {location.startDate}</p>
-                        <p className="popup-report-status">
-                          <strong>Status:</strong> {location.status || (location.resolvedAt ? 'Resolved' : 'Submitted')}
-                        </p>
-                      </>
-                    )}
-
-                    {location.category === 'Report' && location.resolvedAt && (
-                      <p className="popup-resolution-status">
-                        <strong>Resolved:</strong> {location.resolvedAt.toDate().toLocaleString()}
-                        {location.resolvedBy && ` · by ${location.resolvedBy}`}
-                      </p>
-                    )}
-
-                    {adminStatus === 'admin' && location.category === 'Report' && (
-                      <>
-                        {(location.status || (location.resolvedAt ? 'Resolved' : 'Submitted')) === 'Submitted' && (
-                          <button
-                            className="popup-resolve-button"
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleReportStatusChange(location, 'Under review');
-                            }}
-                            disabled={reportStatusFeedback.locationId === location.id && reportStatusFeedback.status === 'updating'}
-                          >
-                            Mark under review
-                          </button>
-                        )}
-                        {(location.status || (location.resolvedAt ? 'Resolved' : 'Submitted')) === 'Under review' && (
-                          <button
-                            className="popup-resolve-button"
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleReportStatusChange(location, 'Resolved');
-                            }}
-                            disabled={reportStatusFeedback.locationId === location.id && reportStatusFeedback.status === 'updating'}
-                          >
-                            Mark resolved
-                          </button>
-                        )}
-                        {reportStatusFeedback.locationId === location.id && reportStatusFeedback.error && (
-                          <p className="popup-delete-error" role="alert">{reportStatusFeedback.error}</p>
-                        )}
-                      </>
-                    )}
-
-                    {adminStatus === 'admin' && (
-                      <>
-                        <button
-                          className="popup-resolve-button"
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleEditLocation(location);
-                          }}
-                        >
-                          Edit marker
-                        </button>
-                        <button
-                          className="popup-delete-button"
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleDeleteLocation(location);
-                          }}
-                          disabled={deleteFeedback.locationId === location.id && deleteFeedback.status === 'deleting'}
-                        >
-                          {deleteFeedback.locationId === location.id && deleteFeedback.status === 'deleting'
-                            ? 'Deleting…'
-                            : 'Delete location'}
-                        </button>
-                        {deleteFeedback.locationId === location.id && deleteFeedback.error && (
-                          <p className="popup-delete-error" role="alert">{deleteFeedback.error}</p>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </Popup>
               </Marker>
             ))}
           </MapContainer>
