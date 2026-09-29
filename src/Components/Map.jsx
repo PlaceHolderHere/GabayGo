@@ -3,6 +3,12 @@ import { MapContainer, Marker, Popup, TileLayer, useMapEvents } from 'react-leaf
 import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import L from 'leaflet';
 import { db } from '../firebase';
+import locationImage from '../assets/Location.svg';
+import outageImage from '../assets/Outage.svg';
+import serviceImage from '../assets/Service.svg';
+import marketplaceImage from '../assets/Marketplace.svg';
+import reportImage from '../assets/Report.svg';
+import temporaryLocationImage from '../assets/TemporaryLocation.svg';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
 
@@ -16,27 +22,27 @@ const CustomIcon = L.Icon.extend({
 });
 
 const defaultIcon = new CustomIcon({
-    iconUrl: 'src/assets/Location.svg',
+  iconUrl: locationImage,
 })
 
 const outageIcon = new CustomIcon({
-    iconUrl: 'src/assets/Outage.svg',
+  iconUrl: outageImage,
 })
 
 const serviceIcon = new CustomIcon({
-    iconUrl: 'src/assets/Service.svg',
+  iconUrl: serviceImage,
 })
 
 const marketPlaceIcon = new CustomIcon({
-    iconUrl: 'src/assets/Marketplace.svg',
+  iconUrl: marketplaceImage,
 })
 
 const reportIcon = new CustomIcon({
-    iconUrl: 'src/assets/Report.svg',
+  iconUrl: reportImage,
 })
 
 const temporaryLocationIcon = new CustomIcon({
-    iconUrl: 'src/assets/TemporaryLocation.svg',
+  iconUrl: temporaryLocationImage,
 })
 
 
