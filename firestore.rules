@@ -18,7 +18,7 @@ service cloud.firestore {
           'name', 'category', 'description', 'lat', 'lng',
           'startDate', 'startTime', 'endDate', 'endTime',
           'createdBy', 'createdAt', 'status', 'officeHours', 'contactInfo', 'underReviewAt',
-          'underReviewBy', 'resolvedAt', 'resolvedBy', 'hazardRadius'
+          'underReviewBy', 'resolvedAt', 'resolvedBy', 'hazardRadius', 'updatedAt'
         ])
         && data.name is string
         && data.name.size() > 0
@@ -31,6 +31,7 @@ service cloud.firestore {
         && (!data.keys().hasAny(['hazardRadius']) || ((data.hazardRadius is int || data.hazardRadius is float)
           && data.hazardRadius >= 50 && data.hazardRadius <= 50000))
         && (data.category != 'Hazard' || data.keys().hasAny(['hazardRadius']))
+        && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is timestamp)
         && (data.lat is int || data.lat is float)
         && data.lat >= -90
         && data.lat <= 90
@@ -81,6 +82,8 @@ service cloud.firestore {
         && validLocation(request.resource.data)
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt == request.time
+        && (request.resource.data.category != 'Hazard'
+          || request.resource.data.get('updatedAt', null) == request.time)
         && (request.resource.data.category != 'Report'
           || (request.resource.data.status == 'Submitted'
             && request.resource.data.underReviewAt == null
@@ -93,6 +96,8 @@ service cloud.firestore {
         && request.resource.data.category == resource.data.category
         && request.resource.data.createdBy == resource.data.createdBy
         && request.resource.data.createdAt == resource.data.createdAt
+        && (resource.data.category != 'Hazard'
+          || request.resource.data.get('updatedAt', null) == request.time)
         && validReportStatusTransition(resource.data, request.resource.data);
       allow delete: if isAdmin();
     }
