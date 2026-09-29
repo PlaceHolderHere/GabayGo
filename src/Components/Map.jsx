@@ -89,6 +89,11 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
       ? 'signed-out'
       : adminCheck.uid === user.uid ? adminCheck.status : 'checking';
   const userId = user?.uid;
+  const isAdmin = adminStatus === 'admin';
+  const canCreateReports = Boolean(db && user);
+  const canCreateMarkers = isAdmin || canCreateReports;
+  const availableCategories = isAdmin ? categories : ['Report'];
+  const selectedFormCategory = isAdmin ? formData.category : 'Report';
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
   const visibleLocations = locations.filter((location) => {
     const matchesCategory = categoryFilters.length === 0 || categoryFilters.includes(location.category);
@@ -128,7 +133,7 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
 
   // Updates selected position
   const handleMapClick = (latlng) => {
-    if (adminStatus !== 'admin') return;
+    if (!canCreateMarkers) return;
     setSelectedPosition(latlng);
     setActivePanelTab('create');
     setPanelOpen(true);
@@ -147,13 +152,13 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
   const handleAddLocation = async (event) => {
     event.preventDefault();
 
-    if (!db || !user || adminStatus !== 'admin' || !selectedPosition || !formData.name.trim()) {
+    if (!db || !user || !canCreateMarkers || !selectedPosition || !formData.name.trim()) {
       return;
     }
 
     const newLocation = {
       name: formData.name.trim(),
-      category: formData.category,
+      category: selectedFormCategory,
       description: formData.description.trim() || 'New location added by the user.',
       lat: selectedPosition.lat,
       lng: selectedPosition.lng,
@@ -165,7 +170,7 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
       createdAt: serverTimestamp(),
     };
 
-    if (timeStampedCategories.includes(formData.category)) {
+    if (timeStampedCategories.includes(selectedFormCategory)) {
       const now = new Date();
       newLocation.startDate = now.toISOString().split('T')[0];
       newLocation.startTime = now.toTimeString().split(' ')[0];
@@ -178,7 +183,7 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
       await addDoc(collection(db, 'Locations'), newLocation);
       setFormData({
         name: '',
-        category: categories[0],
+        category: isAdmin ? categories[0] : 'Report',
         description: '',
         startDate: '',
         startTime: '',
@@ -310,8 +315,9 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
 
             {activePanelTab === 'create' && (
             <>
-              {adminStatus === 'admin' ? (
+              {canCreateMarkers ? (
               <form className="add-location-form" onSubmit={handleAddLocation}>
+              {!isAdmin && <p className="report-access-note">You can submit a report. Other location types are reserved for admins.</p>}
               <label>
                 Name
                 <input
@@ -325,14 +331,14 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
 
               <label>
                 Category
-                <select name="category" value={formData.category} onChange={handleInputChange}>
-                  {categories.map((category) => (
+                <select name="category" value={selectedFormCategory} onChange={handleInputChange} disabled={!isAdmin}>
+                  {availableCategories.map((category) => (
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
               </label>
 
-              {timeSensitiveCategories.includes(formData.category) && (
+              {timeSensitiveCategories.includes(selectedFormCategory) && (
                 <>
                   <label>
                     Start Date
@@ -365,7 +371,7 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
               </label>
 
               <button type="submit" disabled={!selectedPosition || !formData.name.trim() || isSaving}>
-                {isSaving ? 'Saving location…' : 'Add Location'}
+                {isSaving ? (isAdmin ? 'Saving location…' : 'Submitting report…') : isAdmin ? 'Add Location' : 'Submit Report'}
               </button>
               {saveError && <p className="map-feedback map-feedback--error" role="alert">{saveError}</p>}
             </form>
@@ -396,9 +402,9 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
-            {adminStatus === 'admin' && <ClickHandler onMapClick={handleMapClick} />}
+            {canCreateMarkers && <ClickHandler onMapClick={handleMapClick} />}
 
-            {adminStatus === 'admin' && selectedPosition && (
+            {canCreateMarkers && selectedPosition && (
               <Marker
                 key={`temporary-${selectedPosition.lat}-${selectedPosition.lng}`}
                 position={[selectedPosition.lat, selectedPosition.lng]}
@@ -421,6 +427,9 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
                     <strong>{location.name}</strong>
                     <span>{location.category}</span>
                     <p>{location.description}</p>
+                    {location.createdBy && (
+                      <p className="popup-created-by">Added by account: {location.createdBy}</p>
+                    )}
 
                     {timeSensitiveCategories.includes(location.category) && (
                       <>
