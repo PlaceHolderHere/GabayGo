@@ -117,9 +117,8 @@ export default function Chat({ user, locations, locationsStatus, locationsError,
     <main className="chat-page" hidden={hidden} aria-labelledby="chat-title">
       <header className="chat-header">
         <div>
-          <p className="chat-eyebrow">GabayGo assistant</p>
-          <h1 id="chat-title">Ask AI</h1>
-          <p>Locations, updates, and upcoming events</p>
+          <h1 id="chat-title">GabayGo Assistant</h1>
+          <p>GabayGo topics only</p>
         </div>
         <span className="chat-model-label">Gemini</span>
       </header>
@@ -166,7 +165,6 @@ export default function Chat({ user, locations, locationsStatus, locationsError,
             disabled={isSending}
           />
           <div className="chat-composer-footer">
-            <span>GabayGo topics only</span>
             <button type="submit" disabled={isSending || !draft.trim()}>
               {isSending ? 'Sending…' : 'Send'}
             </button>
