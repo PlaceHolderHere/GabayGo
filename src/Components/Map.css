@@ -17,7 +17,7 @@
 
 .map-panel {
   position: absolute;
-  z-index: 600;
+  z-index: 1010;
   inset: 1rem auto 1rem 1rem;
   width: var(--map-panel-width);
   overflow-y: auto;
