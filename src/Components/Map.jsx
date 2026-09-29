@@ -531,7 +531,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
                   <section className="route-panel" aria-label="Driving directions">
                     <div className="route-panel-header">
                       <h3>Driving directions</h3>
-                      <button type="button" onClick={() => setRouteState(null)}>Cancel</button>
+                      <button className="map-danger-button" type="button" onClick={() => setRouteState(null)}>Cancel</button>
                     </div>
                     <p className="route-endpoint"><strong>From</strong> {routeState.origin?.name || 'Your location'}</p>
                     {routeState.destination && (
@@ -733,7 +733,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
               <button type="submit" disabled={(!selectedPosition && !editingLocationId) || !formData.name.trim() || isSaving}>
                 {isSaving ? (isAdmin ? 'Saving location…' : 'Submitting report…') : editingLocationId ? 'Save changes' : isAdmin ? 'Add Location' : 'Submit Report'}
               </button>
-              {editingLocationId && <button type="button" onClick={handleCancelEdit}>Cancel edit</button>}
+              {editingLocationId && <button className="map-danger-button" type="button" onClick={handleCancelEdit}>Cancel edit</button>}
               {saveError && <p className="map-feedback map-feedback--error" role="alert">{saveError}</p>}
             </form>
             ) : (
@@ -840,7 +840,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
               <div className="marker-details-admin-actions">
                 <button type="button" onClick={() => handleEditLocation(selectedLocation)}>Edit marker</button>
                 <button
-                  className="popup-delete-button"
+                  className="popup-delete-button map-danger-button"
                   type="button"
                   onClick={() => handleDeleteLocation(selectedLocation)}
                   disabled={deleteFeedback.locationId === selectedLocation.id && deleteFeedback.status === 'deleting'}
