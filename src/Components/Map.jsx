@@ -1,62 +1,15 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMapEvents } from 'react-leaflet';
-import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import L from 'leaflet';
+import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import locationImage from '../assets/Location.svg';
-import outageImage from '../assets/Outage.svg';
-import serviceImage from '../assets/Service.svg';
-import marketplaceImage from '../assets/Marketplace.svg';
-import reportImage from '../assets/Report.svg';
-import temporaryLocationImage from '../assets/TemporaryLocation.svg';
+import { categoryIcons, defaultIcon, temporaryLocationIcon } from './mapIcons';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
 
-// ICONS
-const CustomIcon = L.Icon.extend({
-  options: {
-    iconSize: [40, 40],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-  }
-});
-
-const defaultIcon = new CustomIcon({
-  iconUrl: locationImage,
-})
-
-const outageIcon = new CustomIcon({
-  iconUrl: outageImage,
-})
-
-const serviceIcon = new CustomIcon({
-  iconUrl: serviceImage,
-})
-
-const marketPlaceIcon = new CustomIcon({
-  iconUrl: marketplaceImage,
-})
-
-const reportIcon = new CustomIcon({
-  iconUrl: reportImage,
-})
-
-const temporaryLocationIcon = new CustomIcon({
-  iconUrl: temporaryLocationImage,
-})
-
-
 // INITIAL LOCATIONS
 const categories = ['Location', 'Outage', 'Service', 'Marketplace', 'Report']
-const timeSensitiveCategories = ['Outage', 'Service']
+const timeSensitiveCategories = ['Marketplace', 'Outage', 'Service']
 const timeStampedCategories = ['Report']
-const categoryIcons = {
-    'Location': defaultIcon, 
-    'Outage': outageIcon, 
-    'Service': serviceIcon, 
-    'Marketplace': marketPlaceIcon, 
-    'Report': reportIcon
-}
 function ClickHandler({ onMapClick }) {
   useMapEvents({
     click(e) {
@@ -67,13 +20,11 @@ function ClickHandler({ onMapClick }) {
   return null;
 }
 
-export default function Map({ user, onRequestLogin, onLocationsChange }) {
-  const [locations, setLocations] = useState([]);
-  const [locationsStatus, setLocationsStatus] = useState(db ? 'loading' : 'unavailable');
-  const [locationsError, setLocationsError] = useState('');
+export default function Map({ user, locations, locationsStatus, locationsError, onRequestLogin }) {
   const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' });
   const [saveError, setSaveError] = useState('');
   const [deleteFeedback, setDeleteFeedback] = useState({ locationId: null, status: '', error: '' });
+  const [reportStatusFeedback, setReportStatusFeedback] = useState({ locationId: null, status: '', error: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
   const [activePanelTab, setActivePanelTab] = useState('search');
@@ -106,23 +57,6 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
     const searchableText = `${location.name} ${location.category} ${location.description}`.toLocaleLowerCase();
     return matchesCategory && (!normalizedSearch || searchableText.includes(normalizedSearch));
   });
-
-  useEffect(() => {
-    if (!db) return undefined;
-
-    return onSnapshot(collection(db, 'Locations'), (snapshot) => {
-      const nextLocations = snapshot.docs
-        .map((locationDoc) => ({ id: locationDoc.id, ...locationDoc.data() }))
-        .filter((location) => Number.isFinite(location.lat) && Number.isFinite(location.lng));
-      setLocations(nextLocations);
-      onLocationsChange(nextLocations);
-      setLocationsStatus('ready');
-      setLocationsError('');
-    }, () => {
-      setLocationsStatus('error');
-      setLocationsError('Locations could not be loaded. Check the Firestore database and its read rules.');
-    });
-  }, [onLocationsChange]);
 
   useEffect(() => {
     if (!db || !userId) return undefined;
@@ -174,6 +108,11 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
       endTime: formData.endTime || null,
       createdBy: user.uid,
       createdAt: serverTimestamp(),
+      status: selectedFormCategory === 'Report' ? 'Submitted' : null,
+      underReviewAt: null,
+      underReviewBy: null,
+      resolvedAt: null,
+      resolvedBy: null,
     };
 
     if (timeStampedCategories.includes(selectedFormCategory)) {
@@ -218,6 +157,36 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
         locationId: location.id,
         status: 'error',
         error: 'This location could not be deleted. Check your admin access and Firestore rules.',
+      });
+    }
+  };
+
+  const handleReportStatusChange = async (location, nextStatus) => {
+    if (!db || !user || adminStatus !== 'admin' || location.category !== 'Report') return;
+
+    const currentStatus = location.status || (location.resolvedAt ? 'Resolved' : 'Submitted');
+    const canMoveToReview = currentStatus === 'Submitted' && nextStatus === 'Under review';
+    const canResolve = currentStatus === 'Under review' && nextStatus === 'Resolved';
+    if (!canMoveToReview && !canResolve) return;
+    if (!window.confirm(`Change "${location.name}" to ${nextStatus.toLowerCase()}?`)) return;
+
+    setReportStatusFeedback({ locationId: location.id, status: 'updating', error: '' });
+    try {
+      const updates = { status: nextStatus };
+      if (canMoveToReview) {
+        updates.underReviewAt = serverTimestamp();
+        updates.underReviewBy = user.uid;
+      } else {
+        updates.resolvedAt = serverTimestamp();
+        updates.resolvedBy = user.uid;
+      }
+      await updateDoc(doc(db, 'Locations', location.id), updates);
+      setReportStatusFeedback({ locationId: null, status: '', error: '' });
+    } catch {
+      setReportStatusFeedback({
+        locationId: location.id,
+        status: 'error',
+        error: 'Report status could not be updated. Check your admin access and Firestore rules.',
       });
     }
   };
@@ -446,8 +415,51 @@ export default function Map({ user, onRequestLogin, onLocationsChange }) {
 
                     {timeStampedCategories.includes(location.category) && (
                       <>
-                        <p><strong>Date:</strong> {location.startDate}</p>
-                        <p><strong>Time:</strong> {location.startTime}</p>
+                        <p><strong>Opened:</strong> {location.startDate}</p>
+                        <p className="popup-report-status">
+                          <strong>Status:</strong> {location.status || (location.resolvedAt ? 'Resolved' : 'Submitted')}
+                        </p>
+                      </>
+                    )}
+
+                    {location.category === 'Report' && location.resolvedAt && (
+                      <p className="popup-resolution-status">
+                        <strong>Resolved:</strong> {location.resolvedAt.toDate().toLocaleString()}
+                        {location.resolvedBy && ` · by ${location.resolvedBy}`}
+                      </p>
+                    )}
+
+                    {adminStatus === 'admin' && location.category === 'Report' && (
+                      <>
+                        {(location.status || (location.resolvedAt ? 'Resolved' : 'Submitted')) === 'Submitted' && (
+                          <button
+                            className="popup-resolve-button"
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleReportStatusChange(location, 'Under review');
+                            }}
+                            disabled={reportStatusFeedback.locationId === location.id && reportStatusFeedback.status === 'updating'}
+                          >
+                            Mark under review
+                          </button>
+                        )}
+                        {(location.status || (location.resolvedAt ? 'Resolved' : 'Submitted')) === 'Under review' && (
+                          <button
+                            className="popup-resolve-button"
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleReportStatusChange(location, 'Resolved');
+                            }}
+                            disabled={reportStatusFeedback.locationId === location.id && reportStatusFeedback.status === 'updating'}
+                          >
+                            Mark resolved
+                          </button>
+                        )}
+                        {reportStatusFeedback.locationId === location.id && reportStatusFeedback.error && (
+                          <p className="popup-delete-error" role="alert">{reportStatusFeedback.error}</p>
+                        )}
                       </>
                     )}
 

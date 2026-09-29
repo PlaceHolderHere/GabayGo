@@ -17,7 +17,8 @@ service cloud.firestore {
         && data.keys().hasOnly([
           'name', 'category', 'description', 'lat', 'lng',
           'startDate', 'startTime', 'endDate', 'endTime',
-          'createdBy', 'createdAt'
+          'createdBy', 'createdAt', 'status', 'underReviewAt',
+          'underReviewBy', 'resolvedAt', 'resolvedBy'
         ])
         && data.name is string
         && data.name.size() > 0
@@ -35,8 +36,33 @@ service cloud.firestore {
         && (data.startTime == null || data.startTime is string)
         && (data.endDate == null || data.endDate is string)
         && (data.endTime == null || data.endTime is string)
+        && (!data.keys().hasAny(['resolvedAt']) || data.resolvedAt == null || data.resolvedAt is timestamp)
+        && (!data.keys().hasAny(['resolvedBy']) || data.resolvedBy == null || data.resolvedBy is string)
+        && (!data.keys().hasAny(['underReviewAt']) || data.underReviewAt == null || data.underReviewAt is timestamp)
+        && (!data.keys().hasAny(['underReviewBy']) || data.underReviewBy == null || data.underReviewBy is string)
+        && (!data.keys().hasAny(['status']) || data.status == null || data.status in ['Submitted', 'Under review', 'Resolved'])
         && data.createdBy is string
         && data.createdAt is timestamp;
+    }
+
+    function validReportStatusTransition(before, after) {
+      return before.get('category', '') != 'Report'
+        || (
+          before.get('status', 'Submitted') == 'Submitted'
+          && after.get('status', '') == 'Under review'
+          && after.get('underReviewAt', null) == request.time
+          && after.get('underReviewBy', '') == request.auth.uid
+          && after.get('resolvedAt', null) == before.get('resolvedAt', null)
+          && after.get('resolvedBy', null) == before.get('resolvedBy', null)
+        )
+        || (
+          before.get('status', 'Submitted') == 'Under review'
+          && after.get('status', '') == 'Resolved'
+          && after.get('resolvedAt', null) == request.time
+          && after.get('resolvedBy', '') == request.auth.uid
+          && after.get('underReviewAt', null) == before.get('underReviewAt', null)
+          && after.get('underReviewBy', null) == before.get('underReviewBy', null)
+        );
     }
 
     match /admin/{uid} {
@@ -50,11 +76,19 @@ service cloud.firestore {
         && validLocation(request.resource.data)
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt == request.time
+        && (request.resource.data.category != 'Report'
+          || (request.resource.data.status == 'Submitted'
+            && request.resource.data.underReviewAt == null
+            && request.resource.data.underReviewBy == null
+            && request.resource.data.resolvedAt == null
+            && request.resource.data.resolvedBy == null))
         && (isAdmin() || request.resource.data.category == 'Report');
       allow update: if isAdmin()
         && validLocation(request.resource.data)
+        && request.resource.data.category == resource.data.category
         && request.resource.data.createdBy == resource.data.createdBy
-        && request.resource.data.createdAt == resource.data.createdAt;
+        && request.resource.data.createdAt == resource.data.createdAt
+        && validReportStatusTransition(resource.data, request.resource.data);
       allow delete: if isAdmin();
     }
   }

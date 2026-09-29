@@ -454,6 +454,33 @@
   opacity: 0.6;
 }
 
+.popup-resolve-button {
+  align-self: flex-start;
+  margin-top: 0.4rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--color-gold);
+  border-radius: 3px;
+  background: var(--color-sand);
+  color: var(--color-brown);
+  font-size: 0.76rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.popup-resolve-button:hover:not(:disabled) {
+  background: var(--color-gold);
+}
+
+.popup-resolve-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.popup-card .popup-resolution-status {
+  color: var(--color-brown);
+  font-size: 0.73rem;
+}
+
 .popup-delete-error {
   margin: 0;
   color: var(--color-brown);
