@@ -58,6 +58,17 @@ export default function Marketplace({
       const secondTime = second.createdAt?.toMillis?.() || 0
       return secondTime - firstTime
     })
+  const isFormValid = Boolean(
+    db
+    && user
+    && locationsStatus === 'ready'
+    && marketplaceLocations.some((location) => location.id === formData.locationId)
+    && formData.title.trim()
+    && formData.price.trim()
+    && formData.hours.trim()
+    && formData.offering.trim()
+    && formData.contactMethod.trim(),
+  )
 
   const handleInputChange = (event) => {
     const { name, value } = event.target
@@ -194,7 +205,7 @@ export default function Marketplace({
                 />
               </label>
               <p className="marketplace-form-note">Contact details are visible to anyone who can view the marketplace.</p>
-              <button type="submit" disabled={isSaving || locationsStatus !== 'ready' || marketplaceLocations.length === 0}>
+              <button type="submit" disabled={isSaving || !isFormValid}>
                 {isSaving ? 'Publishing…' : 'Publish listing'}
               </button>
               {saveError && <p className="marketplace-feedback marketplace-feedback--error" role="alert">{saveError}</p>}
