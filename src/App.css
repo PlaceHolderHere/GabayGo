@@ -2,3 +2,126 @@
 	min-height: 100vh;
 	background: var(--color-cream);
 }
+
+.hazard-notice {
+	position: fixed;
+	z-index: 1080;
+	right: 1rem;
+	bottom: 1rem;
+	display: grid;
+	width: min(350px, calc(100vw - 2rem));
+	max-height: min(55vh, 480px);
+	gap: 0.7rem;
+	overflow: hidden;
+	border: 1px solid color-mix(in srgb, #b93824 45%, var(--color-line));
+	border-top: 4px solid #b93824;
+	background: var(--color-cream);
+	box-shadow: 0 12px 32px color-mix(in srgb, var(--color-brown) 25%, transparent);
+}
+
+.hazard-notice-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.85rem 0.85rem 0;
+}
+
+.hazard-notice-eyebrow {
+	margin: 0 0 0.2rem;
+	color: #8b2b1f;
+	font-size: 0.64rem;
+	font-weight: 750;
+	text-transform: uppercase;
+}
+
+.hazard-notice-header h2 {
+	margin: 0;
+	color: var(--color-brown);
+	font-family: Manrope, sans-serif;
+	font-size: 1rem;
+}
+
+.hazard-notice-close {
+	display: grid;
+	width: 2rem;
+	height: 2rem;
+	flex: 0 0 auto;
+	place-items: center;
+	padding: 0;
+	border: 1px solid var(--color-line);
+	border-radius: 3px;
+	background: transparent;
+	color: var(--color-brown);
+	font-size: 1.3rem;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.hazard-notice-close:hover {
+	background: var(--color-sand);
+}
+
+.hazard-notice-list {
+	display: grid;
+	gap: 0;
+	overflow-y: auto;
+	margin: 0;
+	padding: 0 0.85rem;
+	list-style: none;
+}
+
+.hazard-notice-list li + li {
+	border-top: 1px solid var(--color-line);
+}
+
+.hazard-notice-item {
+	display: grid;
+	width: 100%;
+	gap: 0.25rem;
+	padding: 0.65rem 0;
+	border: 0;
+	background: transparent;
+	color: var(--color-brown);
+	text-align: left;
+	cursor: pointer;
+}
+
+.hazard-notice-item:hover strong {
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.hazard-notice-item strong {
+	font-size: 0.82rem;
+	overflow-wrap: anywhere;
+}
+
+.hazard-notice-item span {
+	color: var(--color-muted);
+	font-size: 0.75rem;
+	line-height: 1.45;
+	overflow-wrap: anywhere;
+}
+
+.hazard-notice-item small {
+	color: #8b2b1f;
+	font-size: 0.68rem;
+	font-weight: 650;
+}
+
+.hazard-notice-more {
+	margin: 0;
+	padding: 0 0.85rem 0.8rem;
+	color: var(--color-muted);
+	font-size: 0.72rem;
+}
+
+@media (max-width: 520px) {
+	.hazard-notice {
+		right: 0.65rem;
+		bottom: 0.65rem;
+		width: min(350px, calc(100vw - 1.3rem));
+		max-height: 48vh;
+	}
+}
