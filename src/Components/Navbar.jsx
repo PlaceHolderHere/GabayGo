@@ -26,6 +26,14 @@ export default function Navbar({ user, activePage, onNavigate, onLogin, onSignOu
           >
             Updates
           </button>
+          <button
+            className={`nav-map-link${activePage === 'chat' ? ' nav-map-link--active' : ''}`}
+            type="button"
+            onClick={() => user ? onNavigate('chat') : onLogin()}
+            aria-current={user && activePage === 'chat' ? 'page' : undefined}
+          >
+            Ask AI
+          </button>
         </nav>
       </div>
       <div className="site-nav-account">

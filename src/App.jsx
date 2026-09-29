@@ -7,6 +7,7 @@ import Map from './Components/Map'
 import Navbar from './Components/Navbar'
 import Updates from './Pages/Updates'
 import Login from './Pages/Login'
+import Chat from './Pages/Chat'
 
 function App() {
   const [user, setUser] = useState(null)
@@ -19,7 +20,13 @@ function App() {
   useEffect(() => {
     if (!auth) return undefined
 
-    return onAuthStateChanged(auth, setUser, () => setUser(null))
+    return onAuthStateChanged(auth, (nextUser) => {
+      setUser(nextUser)
+      if (!nextUser) setActivePage('map')
+    }, () => {
+      setUser(null)
+      setActivePage('map')
+    })
   }, [])
 
   useEffect(() => {
@@ -47,15 +54,25 @@ function App() {
         onLogin={() => setLoginOpen(true)}
         onSignOut={() => signOut(auth)}
       />
-      {activePage === 'updates' ? (
+      {activePage === 'updates' && (
         <Updates locations={locations} locationsStatus={locationsStatus} locationsError={locationsError} />
-      ) : (
+      )}
+      {activePage === 'map' && (
         <Map
           user={user}
           locations={locations}
           locationsStatus={locationsStatus}
           locationsError={locationsError}
           onRequestLogin={() => setLoginOpen(true)}
+        />
+      )}
+      {user && (
+        <Chat
+          user={user}
+          locations={locations}
+          locationsStatus={locationsStatus}
+          locationsError={locationsError}
+          hidden={activePage !== 'chat'}
         />
       )}
       {loginOpen && <Login onClose={() => setLoginOpen(false)} />}
