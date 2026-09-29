@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, Marker, Popup, TileLayer, useMapEvents } from 'react-leaflet';
+import { Circle, MapContainer, Marker, Popup, TileLayer, useMapEvents } from 'react-leaflet';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { categoryIcons, defaultIcon, temporaryLocationIcon } from './mapIcons';
@@ -7,9 +7,10 @@ import 'leaflet/dist/leaflet.css';
 import './Map.css';
 
 // INITIAL LOCATIONS
-const categories = ['Location', 'Outage', 'Service', 'Marketplace', 'Report']
+const categories = ['Location', 'Outage', 'Service', 'Marketplace', 'Report', 'Hazard']
 const timeSensitiveCategories = ['Marketplace', 'Outage', 'Service']
 const timeStampedCategories = ['Report']
+const defaultHazardRadius = 500
 function ClickHandler({ onMapClick }) {
   useMapEvents({
     click(e) {
@@ -32,6 +33,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilters, setCategoryFilters] = useState([]);
   const [selectedPosition, setSelectedPosition] = useState(null);
+  const [selectedHazardId, setSelectedHazardId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     category: categories[0],
@@ -42,6 +44,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
     startTime: '',
     endDate: '',
     endTime: '',
+    hazardRadius: String(defaultHazardRadius),
   });
   const adminStatus = !db
     ? 'unavailable'
@@ -76,6 +79,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
 
   // Updates selected position
   const handleMapClick = (latlng) => {
+    setSelectedHazardId(null);
     if (!canCreateMarkers) return;
     setSelectedPosition(latlng);
     setActivePanelTab('create');
@@ -103,9 +107,19 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
       name: formData.name.trim(),
       description: formData.description.trim() || (editingLocationId ? '' : 'New location added by the user.'),
     };
-    if (editingLocationId || selectedFormCategory === 'Location') {
+    if (selectedFormCategory === 'Location') {
       locationDetails.officeHours = formData.officeHours.trim();
       locationDetails.contactInfo = formData.contactInfo.trim();
+    }
+    if (timeSensitiveCategories.includes(selectedFormCategory)
+      || (editingLocationId && timeStampedCategories.includes(selectedFormCategory))) {
+      locationDetails.startDate = formData.startDate || null;
+      locationDetails.startTime = formData.startTime || null;
+      locationDetails.endDate = formData.endDate || null;
+      locationDetails.endTime = formData.endTime || null;
+    }
+    if (selectedFormCategory === 'Hazard') {
+      locationDetails.hazardRadius = Number(formData.hazardRadius);
     }
 
     setIsSaving(true);
@@ -152,6 +166,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
         startTime: '',
         endDate: '',
         endTime: '',
+        hazardRadius: String(defaultHazardRadius),
       });
       setSelectedPosition(null);
     } catch {
@@ -164,14 +179,15 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
   const handleEditLocation = (location) => {
     setFormData({
       name: location.name || '',
-      category: 'Location',
+      category: location.category || categories[0],
       description: location.description || '',
       officeHours: location.officeHours || '',
       contactInfo: location.contactInfo || '',
-      startDate: '',
-      startTime: '',
-      endDate: '',
-      endTime: '',
+      startDate: location.startDate || '',
+      startTime: location.startTime || '',
+      endDate: location.endDate || '',
+      endTime: location.endTime || '',
+      hazardRadius: String(location.hazardRadius || defaultHazardRadius),
     });
     setEditingLocationId(location.id);
     setSelectedPosition(null);
@@ -191,6 +207,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
       startTime: '',
       endDate: '',
       endTime: '',
+      hazardRadius: String(defaultHazardRadius),
     });
   };
 
@@ -343,7 +360,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
             <>
               {canCreateMarkers ? (
               <form className="add-location-form" onSubmit={handleAddLocation}>
-              <h3>{editingLocationId ? 'Edit location' : 'Add a location'}</h3>
+              <h3>{editingLocationId ? 'Edit marker' : 'Add a location'}</h3>
               {!isAdmin && <p className="report-access-note">You can submit a report. Other location types are reserved for admins.</p>}
               <label>
                 Name
@@ -365,7 +382,24 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
                 </select>
               </label>
 
-              {timeSensitiveCategories.includes(selectedFormCategory) && (
+              {selectedFormCategory === 'Hazard' && (
+                <label>
+                  Coverage radius (meters)
+                  <input
+                    name="hazardRadius"
+                    type="number"
+                    min="50"
+                    max="50000"
+                    step="any"
+                    required
+                    value={formData.hazardRadius}
+                    onChange={handleInputChange}
+                  />
+                </label>
+              )}
+
+              {(timeSensitiveCategories.includes(selectedFormCategory)
+                || (editingLocationId && timeStampedCategories.includes(selectedFormCategory))) && (
                 <>
                   <label>
                     Start Date
@@ -387,13 +421,15 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
               )}
 
               <label>
-                Description
+                {selectedFormCategory === 'Hazard' ? 'Warning and instructions' : 'Description'}
                 <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
                   rows="3"
-                  placeholder="Short description"
+                  placeholder={selectedFormCategory === 'Hazard'
+                    ? 'Describe the hazard and what people should do'
+                    : 'Short description'}
                 />
               </label>
 
@@ -457,7 +493,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
-            {canCreateMarkers && <ClickHandler onMapClick={handleMapClick} />}
+            <ClickHandler onMapClick={handleMapClick} />
 
             {canCreateMarkers && selectedPosition && (
               <Marker
@@ -475,13 +511,51 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
               </Marker>
             )}
 
+            {canCreateMarkers && selectedPosition && selectedFormCategory === 'Hazard' && (
+              <Circle
+                key={`hazard-radius-preview-${selectedPosition.lat}-${selectedPosition.lng}`}
+                center={[selectedPosition.lat, selectedPosition.lng]}
+                radius={Number(formData.hazardRadius) || defaultHazardRadius}
+                interactive={false}
+                pathOptions={{
+                  color: '#b93824',
+                  fillColor: '#e56a42',
+                  fillOpacity: 0.1,
+                  weight: 2,
+                  dashArray: '6 6',
+                }}
+              />
+            )}
+
+            {visibleLocations.filter((location) => location.category === 'Hazard' && selectedHazardId === location.id).map((location) => (
+              <Circle
+                key={`hazard-radius-${location.id}`}
+                center={[location.lat, location.lng]}
+                radius={location.hazardRadius || defaultHazardRadius}
+                interactive={false}
+                pathOptions={{ color: '#b93824', fillColor: '#e56a42', fillOpacity: 0.16, weight: 2 }}
+              />
+            ))}
+
             {visibleLocations.map((location) => (
-              <Marker key={location.id} position={[location.lat, location.lng]} icon={categoryIcons[location.category] || defaultIcon}>
+              <Marker
+                key={location.id}
+                position={[location.lat, location.lng]}
+                icon={categoryIcons[location.category] || defaultIcon}
+                eventHandlers={location.category === 'Hazard' ? {
+                  click: () => setSelectedHazardId((selectedId) => selectedId === location.id ? null : location.id),
+                } : undefined}
+              >
                 <Popup>
                   <div className="popup-card">
                     <strong>{location.name}</strong>
                     <span>{location.category}</span>
-                    <p>{location.description}</p>
+                    {location.category === 'Hazard'
+                      ? <p className="popup-hazard-warning"><strong>Warning:</strong> {location.description}</p>
+                      : <p>{location.description}</p>}
+                    {location.category === 'Hazard' && location.createdAt?.toDate && (
+                      <p><strong>Created:</strong> {location.createdAt.toDate().toLocaleString()}</p>
+                    )}
                     {location.category === 'Location' && location.officeHours && (
                       <p><strong>Office hours:</strong> {location.officeHours}</p>
                     )}
@@ -551,18 +625,16 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
 
                     {adminStatus === 'admin' && (
                       <>
-                        {location.category === 'Location' && (
-                          <button
-                            className="popup-resolve-button"
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleEditLocation(location);
-                            }}
-                          >
-                            Edit location
-                          </button>
-                        )}
+                        <button
+                          className="popup-resolve-button"
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleEditLocation(location);
+                          }}
+                        >
+                          Edit marker
+                        </button>
                         <button
                           className="popup-delete-button"
                           type="button"

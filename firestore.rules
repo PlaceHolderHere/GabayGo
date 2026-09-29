@@ -18,16 +18,19 @@ service cloud.firestore {
           'name', 'category', 'description', 'lat', 'lng',
           'startDate', 'startTime', 'endDate', 'endTime',
           'createdBy', 'createdAt', 'status', 'officeHours', 'contactInfo', 'underReviewAt',
-          'underReviewBy', 'resolvedAt', 'resolvedBy'
+          'underReviewBy', 'resolvedAt', 'resolvedBy', 'hazardRadius'
         ])
         && data.name is string
         && data.name.size() > 0
         && data.name.size() <= 120
-        && data.category in ['Location', 'Outage', 'Service', 'Marketplace', 'Report']
+        && data.category in ['Location', 'Outage', 'Service', 'Marketplace', 'Report', 'Hazard']
         && data.description is string
         && data.description.size() <= 1000
         && (!data.keys().hasAny(['officeHours']) || (data.officeHours is string && data.officeHours.size() <= 500))
         && (!data.keys().hasAny(['contactInfo']) || (data.contactInfo is string && data.contactInfo.size() <= 500))
+        && (!data.keys().hasAny(['hazardRadius']) || ((data.hazardRadius is int || data.hazardRadius is float)
+          && data.hazardRadius >= 50 && data.hazardRadius <= 50000))
+        && (data.category != 'Hazard' || data.keys().hasAny(['hazardRadius']))
         && (data.lat is int || data.lat is float)
         && data.lat >= -90
         && data.lat <= 90
