@@ -27,6 +27,15 @@ export default function Navbar({ user, activePage, onNavigate, onLogin, onSignOu
             Updates
           </button>
           <button
+            className={`nav-map-link${activePage === 'marketplace' ? ' nav-map-link--active' : ''}`}
+            type="button"
+            onClick={() => onNavigate('marketplace')}
+            aria-current={activePage === 'marketplace' ? 'page' : undefined}
+          >
+            <span className="nav-marketplace-full">Marketplace</span>
+            <span className="nav-marketplace-short">Market</span>
+          </button>
+          <button
             className={`nav-map-link${activePage === 'chat' ? ' nav-map-link--active' : ''}`}
             type="button"
             onClick={() => user ? onNavigate('chat') : onLogin()}

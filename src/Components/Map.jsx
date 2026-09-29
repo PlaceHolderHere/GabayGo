@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMapEvents } from 'react-leaflet';
+import { useEffect, useRef, useState } from 'react';
+import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { categoryIcons, defaultIcon, temporaryLocationIcon } from './mapIcons';
@@ -93,14 +93,26 @@ function ClickHandler({ onMapClick }) {
   return null;
 }
 
-export default function Map({ user, locations, locationsStatus, locationsError, onRequestLogin }) {
+function FocusLocation({ location, markerRef }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!location) return;
+    map.flyTo([location.lat, location.lng], Math.max(map.getZoom(), 17), { duration: 0.55 });
+    markerRef.current?.openPopup();
+  }, [location, map, markerRef]);
+
+  return null;
+}
+
+export default function Map({ user, locations, locationsStatus, locationsError, onRequestLogin, focusedLocationId }) {
   const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' });
   const [saveError, setSaveError] = useState('');
   const [deleteFeedback, setDeleteFeedback] = useState({ locationId: null, status: '', error: '' });
   const [reportStatusFeedback, setReportStatusFeedback] = useState({ locationId: null, status: '', error: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [editingLocationId, setEditingLocationId] = useState(null);
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(() => !focusedLocationId);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [activePanelTab, setActivePanelTab] = useState('search');
@@ -109,6 +121,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
   const [selectedPosition, setSelectedPosition] = useState(null);
   const [selectedHazardId, setSelectedHazardId] = useState(null);
   const [routeState, setRouteState] = useState(null);
+  const focusedMarkerRef = useRef(null);
   const [formData, setFormData] = useState({
     name: '',
     category: categories[0],
@@ -800,6 +813,10 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
 
         <div className="map-container">
           <MapContainer center={[7.0435, 125.5315]} zoom={16.5} scrollWheelZoom className="leaflet-map">
+            <FocusLocation
+              location={locations.find((location) => location.id === focusedLocationId)}
+              markerRef={focusedMarkerRef}
+            />
             <TileLayer
               attribution='&copy; OpenStreetMap contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -873,6 +890,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
             {visibleLocations.map((location) => (
               <Marker
                 key={location.id}
+                ref={location.id === focusedLocationId ? focusedMarkerRef : undefined}
                 position={[location.lat, location.lng]}
                 icon={categoryIcons[location.category] || defaultIcon}
                 eventHandlers={location.category === 'Hazard' ? {

@@ -59,6 +59,10 @@
   color: var(--color-brown);
 }
 
+.nav-marketplace-short {
+  display: none;
+}
+
 .nav-user-name {
   max-width: 220px;
   overflow: hidden;
@@ -116,6 +120,14 @@
 
   .nav-map-link {
     font-size: 0.72rem;
+  }
+
+  .nav-marketplace-full {
+    display: none;
+  }
+
+  .nav-marketplace-short {
+    display: inline;
   }
 
   .site-nav-account {

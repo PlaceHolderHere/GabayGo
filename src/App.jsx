@@ -6,6 +6,7 @@ import './App.css'
 import Map from './Components/Map'
 import Navbar from './Components/Navbar'
 import Updates from './Pages/Updates'
+import Marketplace from './Pages/Marketplace'
 import Login from './Pages/Login'
 import Chat from './Pages/Chat'
 
@@ -16,6 +17,10 @@ function App() {
   const [locations, setLocations] = useState([])
   const [locationsStatus, setLocationsStatus] = useState(db ? 'loading' : 'unavailable')
   const [locationsError, setLocationsError] = useState('')
+  const [marketplaceListings, setMarketplaceListings] = useState([])
+  const [marketplaceListingsStatus, setMarketplaceListingsStatus] = useState(db ? 'loading' : 'unavailable')
+  const [marketplaceListingsError, setMarketplaceListingsError] = useState('')
+  const [focusedMapLocationId, setFocusedMapLocationId] = useState(null)
 
   useEffect(() => {
     if (!auth) return undefined
@@ -45,6 +50,19 @@ function App() {
     })
   }, [])
 
+  useEffect(() => {
+    if (!db) return undefined
+
+    return onSnapshot(collection(db, 'MarketplaceListings'), (snapshot) => {
+      setMarketplaceListings(snapshot.docs.map((listingDoc) => ({ id: listingDoc.id, ...listingDoc.data() })))
+      setMarketplaceListingsStatus('ready')
+      setMarketplaceListingsError('')
+    }, () => {
+      setMarketplaceListingsStatus('error')
+      setMarketplaceListingsError('Marketplace listings could not be loaded. Check Firestore rules and try again.')
+    })
+  }, [])
+
   return (
     <div className="app-shell">
       <Navbar
@@ -57,6 +75,21 @@ function App() {
       {activePage === 'updates' && (
         <Updates locations={locations} locationsStatus={locationsStatus} locationsError={locationsError} />
       )}
+      {activePage === 'marketplace' && (
+        <Marketplace
+          user={user}
+          locations={locations}
+          marketplaceListings={marketplaceListings}
+          locationsStatus={locationsStatus}
+          marketplaceListingsStatus={marketplaceListingsStatus}
+          marketplaceListingsError={marketplaceListingsError}
+          onRequestLogin={() => setLoginOpen(true)}
+          onShowLocation={(locationId) => {
+            setFocusedMapLocationId(locationId)
+            setActivePage('map')
+          }}
+        />
+      )}
       {activePage === 'map' && (
         <Map
           user={user}
@@ -64,6 +97,7 @@ function App() {
           locationsStatus={locationsStatus}
           locationsError={locationsError}
           onRequestLogin={() => setLoginOpen(true)}
+          focusedLocationId={focusedMapLocationId}
         />
       )}
       {user && (

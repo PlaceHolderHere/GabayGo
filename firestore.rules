@@ -101,5 +101,44 @@ service cloud.firestore {
         && validReportStatusTransition(resource.data, request.resource.data);
       allow delete: if isAdmin();
     }
+
+    function validMarketplaceListing(data) {
+      return data.keys().hasAll([
+          'title', 'category', 'price', 'locationId', 'hours', 'offering', 'contactMethod', 'createdBy', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'title', 'category', 'price', 'locationId', 'hours', 'offering', 'contactMethod', 'createdBy', 'createdAt'
+        ])
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 100
+        && data.category in ['Food', 'Produce', 'Retail', 'Crafts', 'Services', 'Other']
+        && data.price is string
+        && data.price.size() > 0
+        && data.price.size() <= 100
+        && data.locationId is string
+        && exists(/databases/$(database)/documents/Locations/$(data.locationId))
+        && get(/databases/$(database)/documents/Locations/$(data.locationId)).data.category == 'Marketplace'
+        && data.hours is string
+        && data.hours.size() > 0
+        && data.hours.size() <= 200
+        && data.offering is string
+        && data.offering.size() > 0
+        && data.offering.size() <= 1000
+        && data.contactMethod is string
+        && data.contactMethod.size() > 0
+        && data.contactMethod.size() <= 300
+        && data.createdBy is string
+        && data.createdAt is timestamp;
+    }
+
+    match /MarketplaceListings/{listingId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && validMarketplaceListing(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
   }
 }

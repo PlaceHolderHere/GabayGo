@@ -1,0 +1,320 @@
+.marketplace-page {
+  width: min(100%, 1360px);
+  margin: 0 auto;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+.marketplace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 0 1.35rem;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.marketplace-eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.marketplace-header h1 {
+  margin: 0;
+  color: var(--color-brown);
+  font-family: Manrope, sans-serif;
+  font-size: 1.8rem;
+  line-height: 1.2;
+}
+
+.marketplace-header > div > p:last-child {
+  margin: 0.4rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+}
+
+.marketplace-count {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.65rem;
+  background: var(--color-soft);
+  color: var(--color-brown);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.marketplace-layout {
+  display: grid;
+  grid-template-columns: minmax(250px, 310px) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+  padding-top: 1.25rem;
+}
+
+.marketplace-compose {
+  position: sticky;
+  top: 88px;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-soft);
+}
+
+.marketplace-compose form,
+.marketplace-sign-in {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.marketplace-compose h2,
+.marketplace-results-header h2 {
+  margin: 0;
+  color: var(--color-brown);
+  font-family: Manrope, sans-serif;
+  font-size: 1.08rem;
+}
+
+.marketplace-compose label,
+.marketplace-filters label {
+  display: grid;
+  min-width: 0;
+  gap: 0.32rem;
+  color: var(--color-brown);
+  font-size: 0.74rem;
+  font-weight: 650;
+}
+
+.marketplace-compose input,
+.marketplace-compose select,
+.marketplace-compose textarea,
+.marketplace-filters input,
+.marketplace-filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.45rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--color-line);
+  border-radius: 3px;
+  background: var(--color-cream);
+  color: var(--color-brown);
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.marketplace-compose textarea {
+  min-height: 6rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.marketplace-compose input:focus,
+.marketplace-compose select:focus,
+.marketplace-compose textarea:focus,
+.marketplace-filters input:focus,
+.marketplace-filters select:focus {
+  border-color: var(--color-gold);
+  outline: 2px solid color-mix(in srgb, var(--color-gold) 35%, transparent);
+  outline-offset: 1px;
+}
+
+.marketplace-compose form > button,
+.marketplace-sign-in button {
+  min-height: 2.65rem;
+  padding: 0.6rem 0.8rem;
+  border: 0;
+  border-radius: 3px;
+  background: var(--color-brown);
+  color: var(--color-cream);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.marketplace-compose form > button:hover:not(:disabled),
+.marketplace-sign-in button:hover {
+  background: color-mix(in srgb, var(--color-brown) 88%, var(--color-gold));
+}
+
+.marketplace-compose form > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.marketplace-form-note,
+.marketplace-sign-in p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.marketplace-results {
+  min-width: 0;
+}
+
+.marketplace-results-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.marketplace-results-header p {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+
+.marketplace-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) repeat(2, minmax(145px, 1fr));
+  gap: 0.65rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.marketplace-listing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.85rem 0;
+  list-style: none;
+}
+
+.marketplace-listing {
+  min-width: 0;
+  padding: 0.95rem;
+  border: 1px solid var(--color-line);
+  border-top: 3px solid #43845b;
+  background: var(--color-cream);
+}
+
+.marketplace-listing-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.marketplace-listing-category {
+  color: #326945;
+  font-size: 0.66rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.marketplace-listing-heading time {
+  color: var(--color-muted);
+  font-size: 0.68rem;
+}
+
+.marketplace-listing h3 {
+  margin: 0.45rem 0;
+  color: var(--color-brown);
+  font-family: Manrope, sans-serif;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.marketplace-listing-offering {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.marketplace-listing dl {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.9rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-line);
+}
+
+.marketplace-listing dl > div {
+  display: grid;
+  grid-template-columns: minmax(5.25rem, 0.65fr) minmax(0, 1.35fr);
+  gap: 0.6rem;
+}
+
+.marketplace-listing dt {
+  color: var(--color-muted);
+  font-size: 0.69rem;
+  font-weight: 650;
+}
+
+.marketplace-listing dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-brown);
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.marketplace-location-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #326945;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.marketplace-location-link:hover {
+  color: var(--color-brown);
+}
+
+.marketplace-empty,
+.marketplace-feedback {
+  margin: 0.85rem 0;
+  padding: 0.8rem;
+  border-left: 3px solid var(--color-gold);
+  background: var(--color-soft);
+  color: var(--color-brown);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.marketplace-empty--error,
+.marketplace-feedback--error {
+  border-color: #b93824;
+}
+
+@media (max-width: 760px) {
+  .marketplace-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .marketplace-compose {
+    position: static;
+  }
+}
+
+@media (max-width: 520px) {
+  .marketplace-header {
+    align-items: flex-start;
+  }
+
+  .marketplace-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .marketplace-header > div > p:last-child {
+    max-width: 38ch;
+  }
+
+  .marketplace-filters {
+    grid-template-columns: 1fr;
+  }
+}
