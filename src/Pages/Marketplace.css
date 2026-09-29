@@ -258,6 +258,41 @@
   white-space: pre-wrap;
 }
 
+.marketplace-listing-owner-actions {
+  display: grid;
+  justify-items: start;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--color-line);
+}
+
+.marketplace-delete-button {
+  min-height: 2.2rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid #b93824;
+  border-radius: 3px;
+  background: #b93824;
+  color: white;
+  font-size: 0.73rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.marketplace-delete-button:hover:not(:disabled) {
+  border-color: #8b2b1f;
+  background: #8b2b1f;
+}
+
+.marketplace-delete-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.marketplace-listing-owner-actions .marketplace-feedback {
+  margin: 0;
+}
+
 .marketplace-location-link {
   padding: 0;
   border: 0;

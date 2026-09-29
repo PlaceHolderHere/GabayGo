@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import './Marketplace.css'
 
@@ -37,6 +37,7 @@ export default function Marketplace({
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [deleteFeedback, setDeleteFeedback] = useState({ listingId: null, status: '', error: '' })
 
   const marketplaceLocations = locations.filter((location) => location.category === 'Marketplace')
   const locationById = useMemo(
@@ -102,6 +103,23 @@ export default function Marketplace({
       setSaveError('Listing could not be saved. Check that Firestore rules are published and try again.')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleDeleteListing = async (listing) => {
+    if (!db || !user || listing.createdBy !== user.uid || deleteFeedback.status === 'deleting') return
+    if (!window.confirm(`Delete "${listing.title}"? This cannot be undone.`)) return
+
+    setDeleteFeedback({ listingId: listing.id, status: 'deleting', error: '' })
+    try {
+      await deleteDoc(doc(db, 'MarketplaceListings', listing.id))
+      setDeleteFeedback({ listingId: null, status: '', error: '' })
+    } catch {
+      setDeleteFeedback({
+        listingId: listing.id,
+        status: 'error',
+        error: 'This listing could not be deleted. Check that Firestore rules are published and try again.',
+      })
     }
   }
 
@@ -304,6 +322,25 @@ export default function Marketplace({
                         <dd>{listing.contactMethod}</dd>
                       </div>
                     </dl>
+                    {user?.uid === listing.createdBy && (
+                      <div className="marketplace-listing-owner-actions">
+                        <button
+                          className="marketplace-delete-button"
+                          type="button"
+                          onClick={() => handleDeleteListing(listing)}
+                          disabled={deleteFeedback.status === 'deleting'}
+                        >
+                          {deleteFeedback.listingId === listing.id && deleteFeedback.status === 'deleting'
+                            ? 'Deleting…'
+                            : 'Delete listing'}
+                        </button>
+                        {deleteFeedback.listingId === listing.id && deleteFeedback.error && (
+                          <p className="marketplace-feedback marketplace-feedback--error" role="alert">
+                            {deleteFeedback.error}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </li>
                 )
               })}

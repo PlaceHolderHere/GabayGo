@@ -138,7 +138,8 @@ service cloud.firestore {
         && validMarketplaceListing(request.resource.data)
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt == request.time;
-      allow update, delete: if false;
+      allow delete: if request.auth != null && resource.data.createdBy == request.auth.uid;
+      allow update: if false;
     }
   }
 }
