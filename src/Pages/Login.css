@@ -38,19 +38,12 @@
 	background: var(--color-soft);
 }
 
-.login-mark {
-	display: grid;
-	width: 2.5rem;
-	aspect-ratio: 1;
-	place-items: center;
+.login-logo {
+	display: block;
+	width: auto;
+	height: 3rem;
 	margin-bottom: 1.8rem;
-	border-radius: 50% 50% 50% 12%;
-	background: var(--color-gold);
-	color: var(--color-brown);
-	font-family: Georgia, serif;
-	font-size: 1.5rem;
-	font-weight: 700;
-	transform: rotate(-8deg);
+	object-fit: contain;
 }
 
 .login-eyebrow {

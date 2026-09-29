@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { auth } from '../firebase'
+import logo from '../assets/Logo.svg'
 import './Login.css'
 
 export default function Login({ onClose }) {
@@ -50,7 +51,7 @@ export default function Login({ onClose }) {
 				<button className="login-close" type="button" onClick={onClose} aria-label="Close sign-in">
 					×
 				</button>
-				<span className="login-mark" aria-hidden="true">g</span>
+				<img className="login-logo" src={logo} alt="GabayGo" />
 				<p className="login-eyebrow">Welcome to GabayGo</p>
 				<h2 id="login-title">Stay connected to your community.</h2>
 				<p className="login-intro">Sign in to share useful places and help neighbors stay informed.</p>
