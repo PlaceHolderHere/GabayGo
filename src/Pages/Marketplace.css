@@ -141,6 +141,13 @@
   opacity: 0.5;
 }
 
+.marketplace-compose form > .marketplace-form-cancel {
+  min-height: 2.2rem;
+  border: 1px solid var(--color-line);
+  background: transparent;
+  color: var(--color-brown);
+}
+
 .marketplace-form-note,
 .marketplace-sign-in p {
   margin: 0;
@@ -151,6 +158,36 @@
 
 .marketplace-results {
   min-width: 0;
+}
+
+.marketplace-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.85rem;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.marketplace-tabs button {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.8rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.marketplace-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--color-green);
+  color: var(--color-brown);
+}
+
+.marketplace-tabs button span {
+  margin-left: 0.25rem;
+  color: var(--color-muted);
 }
 
 .marketplace-results-header {
@@ -212,6 +249,35 @@
   font-size: 0.68rem;
 }
 
+.marketplace-status {
+  display: inline-block;
+  width: fit-content;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.45rem;
+  background: #f2e8ca;
+  color: #6b4c12;
+  font-size: 0.65rem;
+  font-weight: 750;
+  text-transform: capitalize;
+}
+
+.marketplace-status--approved,
+.marketplace-status--accepted {
+  background: #e1efe4;
+  color: #245a34;
+}
+
+.marketplace-status--denied,
+.marketplace-status--rejected {
+  background: #f7e4df;
+  color: #8b2b1f;
+}
+
+.marketplace-status--inactive {
+  background: #e8e8e5;
+  color: #555;
+}
+
 .marketplace-listing h3 {
   margin: 0.45rem 0;
   color: var(--color-brown);
@@ -227,6 +293,12 @@
   line-height: 1.5;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.marketplace-listing-author {
+  margin: -0.15rem 0 0.55rem;
+  color: var(--color-muted);
+  font-size: 0.7rem;
 }
 
 .marketplace-listing dl {
@@ -267,6 +339,12 @@
   border-top: 1px solid var(--color-line);
 }
 
+.marketplace-listing-button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
 .marketplace-delete-button {
   min-height: 2.2rem;
   padding: 0.45rem 0.65rem;
@@ -282,6 +360,73 @@
 .marketplace-delete-button:hover:not(:disabled) {
   border-color: #8b2b1f;
   background: #8b2b1f;
+}
+
+.marketplace-secondary-button {
+  min-height: 2.2rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid #326945;
+  border-radius: 3px;
+  background: #326945;
+  color: white;
+  font-size: 0.73rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.marketplace-secondary-button:hover:not(:disabled) {
+  background: #245a34;
+}
+
+.marketplace-secondary-button:disabled,
+.marketplace-delete-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.marketplace-order-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.85rem 0;
+  list-style: none;
+}
+
+.marketplace-order {
+  padding: 0.85rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-cream);
+}
+
+.marketplace-order-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.marketplace-order h3 {
+  margin: 0;
+  color: var(--color-brown);
+  font-family: Manrope, sans-serif;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.marketplace-order > p,
+.marketplace-order time {
+  display: block;
+  margin: 0.4rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.marketplace-order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
 }
 
 .marketplace-delete-button:disabled {

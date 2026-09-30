@@ -107,7 +107,8 @@ service cloud.firestore {
           'title', 'category', 'price', 'locationId', 'hours', 'offering', 'contactMethod', 'createdBy', 'createdAt'
         ])
         && data.keys().hasOnly([
-          'title', 'category', 'price', 'locationId', 'hours', 'offering', 'contactMethod', 'createdBy', 'createdAt'
+          'title', 'category', 'price', 'locationId', 'hours', 'offering', 'contactMethod', 'createdBy', 'createdAt',
+          'createdByName', 'approvalStatus', 'reviewedAt', 'reviewedBy', 'active'
         ])
         && data.title is string
         && data.title.size() > 0
@@ -129,7 +130,12 @@ service cloud.firestore {
         && data.contactMethod.size() > 0
         && data.contactMethod.size() <= 300
         && data.createdBy is string
-        && data.createdAt is timestamp;
+        && data.createdAt is timestamp
+        && (!data.keys().hasAny(['createdByName']) || (data.createdByName is string && data.createdByName.size() > 0 && data.createdByName.size() <= 120))
+        && (!data.keys().hasAny(['approvalStatus']) || data.approvalStatus in ['underReview', 'approved', 'denied'])
+        && (!data.keys().hasAny(['reviewedAt']) || data.reviewedAt == null || data.reviewedAt is timestamp)
+        && (!data.keys().hasAny(['reviewedBy']) || data.reviewedBy == null || data.reviewedBy is string)
+        && (!data.keys().hasAny(['active']) || data.active is bool);
     }
 
     match /MarketplaceListings/{listingId} {
@@ -137,9 +143,85 @@ service cloud.firestore {
       allow create: if request.auth != null
         && validMarketplaceListing(request.resource.data)
         && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.createdAt == request.time;
+        && request.resource.data.createdByName is string
+        && request.resource.data.createdByName.size() > 0
+        && request.resource.data.createdByName.size() <= 120
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.approvalStatus == 'underReview'
+        && request.resource.data.active == true;
       allow delete: if request.auth != null && resource.data.createdBy == request.auth.uid;
-      allow update: if false;
+      allow update: if request.auth != null
+        && validMarketplaceListing(request.resource.data)
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['approvalStatus', 'reviewedAt', 'reviewedBy'])
+        && isAdmin()
+        && request.resource.data.approvalStatus in ['approved', 'denied']
+        && request.resource.data.reviewedAt == request.time
+        && request.resource.data.reviewedBy == request.auth.uid
+        || (request.auth != null
+        && resource.data.createdBy == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active'])
+        && ((resource.data.get('active', true) == true && request.resource.data.active == false)
+          || (resource.data.get('active', false) == false
+            && request.resource.data.active == true)))
+        || (request.auth != null
+          && resource.data.createdBy == request.auth.uid
+          && request.resource.data.get('createdByName', null) == resource.data.get('createdByName', null)
+          && request.resource.data.get('active', true) == resource.data.get('active', true)
+          && request.resource.data.approvalStatus == 'underReview'
+          && request.resource.data.reviewedAt == null
+          && request.resource.data.reviewedBy == null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'title', 'category', 'price', 'locationId', 'hours', 'offering', 'contactMethod',
+            'approvalStatus', 'reviewedAt', 'reviewedBy'
+          ]));
+    }
+
+    function validMarketplaceOrder(data) {
+      return data.keys().hasAll(['listingId', 'listingTitle', 'price', 'buyerId', 'buyerName', 'sellerId', 'sellerName', 'status', 'createdAt'])
+        && data.keys().hasOnly(['listingId', 'listingTitle', 'price', 'buyerId', 'buyerName', 'sellerId', 'sellerName', 'status', 'createdAt', 'respondedAt'])
+        && data.listingId is string
+        && data.listingTitle is string
+        && data.price is string
+        && data.buyerId is string
+        && data.buyerName is string
+        && data.buyerName.size() > 0
+        && data.buyerName.size() <= 120
+        && data.sellerId is string
+        && data.sellerName is string
+        && data.sellerName.size() > 0
+        && data.sellerName.size() <= 120
+        && data.buyerId != data.sellerId
+        && data.status in ['pending', 'accepted', 'rejected']
+        && data.createdAt is timestamp
+        && (!data.keys().hasAny(['respondedAt']) || data.respondedAt == null || data.respondedAt is timestamp);
+    }
+
+    match /MarketplaceOrders/{orderId} {
+      allow read: if request.auth != null
+        && (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid);
+      allow create: if request.auth != null
+        && validMarketplaceOrder(request.resource.data)
+        && request.resource.data.buyerId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && exists(/databases/$(database)/documents/MarketplaceListings/$(request.resource.data.listingId))
+        && get(/databases/$(database)/documents/MarketplaceListings/$(request.resource.data.listingId)).data.createdBy == request.resource.data.sellerId
+        && get(/databases/$(database)/documents/MarketplaceListings/$(request.resource.data.listingId)).data.approvalStatus == 'approved'
+        && get(/databases/$(database)/documents/MarketplaceListings/$(request.resource.data.listingId)).data.get('active', true) == true
+        && get(/databases/$(database)/documents/MarketplaceListings/$(request.resource.data.listingId)).data.title == request.resource.data.listingTitle
+        && get(/databases/$(database)/documents/MarketplaceListings/$(request.resource.data.listingId)).data.price == request.resource.data.price;
+      allow update: if request.auth != null
+        && validMarketplaceOrder(request.resource.data)
+        && resource.data.sellerId == request.auth.uid
+        && resource.data.status == 'pending'
+        && request.resource.data.status in ['accepted', 'rejected']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'respondedAt'])
+        && request.resource.data.respondedAt == request.time;
+      allow delete: if request.auth != null
+        && resource.data.buyerId == request.auth.uid
+        && resource.data.status in ['pending', 'rejected'];
     }
   }
 }
