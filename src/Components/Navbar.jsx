@@ -6,9 +6,16 @@ export default function Navbar({ user, activePage, onNavigate, onLogin, onSignOu
   return (
     <header className="site-nav">
       <div className="site-nav-left">
-        <a className="site-brand" href="/" aria-label="GabayGo home">
-          <img className="site-brand-logo" src={logo} alt="GabayGo" />
-        </a>
+        <button
+          className="site-brand"
+          type="button"
+          onClick={() => onNavigate('home')}
+          aria-label="GabayGo home"
+          aria-current={activePage === 'home' ? 'page' : undefined}
+        >
+          <img className="site-brand-logo" src={logo} alt="" />
+          <span className="site-brand-name">GabayGo</span>
+        </button>
         <nav className="site-nav-links" aria-label="Main navigation">
           <button
             className={`nav-map-link${activePage === 'map' ? ' nav-map-link--active' : ''}`}

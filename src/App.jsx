@@ -7,6 +7,7 @@ import Map from './Components/Map'
 import Navbar from './Components/Navbar'
 import Updates from './Pages/Updates'
 import Marketplace from './Pages/Marketplace'
+import Home from './Pages/Home'
 import Login from './Pages/Login'
 import Chat from './Pages/Chat'
 
@@ -80,6 +81,14 @@ function App() {
         onLogin={() => setLoginOpen(true)}
         onSignOut={() => signOut(auth)}
       />
+      {activePage === 'home' && (
+        <Home
+          locations={locations}
+          locationsStatus={locationsStatus}
+          onNavigate={setActivePage}
+          onRequestLogin={() => setLoginOpen(true)}
+        />
+      )}
       {activeHazards.length > 0 && !hazardNoticeDismissed && (
         <aside className="hazard-notice" aria-label="Hazard alerts" role="status">
           <header className="hazard-notice-header">

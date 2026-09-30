@@ -20,8 +20,21 @@
 .site-brand {
   display: inline-flex;
   align-items: center;
+  gap: 0.45rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--color-brown);
   text-decoration: none;
+  cursor: pointer;
+}
+
+.site-brand-name {
+  color: var(--color-brown);
+  font-family: Manrope, sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .site-brand-logo {
@@ -98,28 +111,32 @@
   .site-nav-left {
     min-width: 0;
     flex: 1 1 auto;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .site-brand {
-    flex: 0 1 72px;
-    max-width: 72px;
+    flex: 0 0 auto;
+    gap: 0.2rem;
+  }
+
+  .site-brand-name {
+    font-size: 0.68rem;
   }
 
   .site-brand-logo {
-    max-width: 100%;
-    height: 2.1rem;
+    width: auto;
+    height: 1.65rem;
   }
 
   .site-nav-links {
     min-width: 0;
     flex: 1 1 auto;
     justify-content: space-between;
-    gap: 0.45rem;
+    gap: 0.25rem;
   }
 
   .nav-map-link {
-    font-size: 0.72rem;
+    font-size: 0.66rem;
   }
 
   .nav-marketplace-full {
