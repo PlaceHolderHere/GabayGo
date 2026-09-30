@@ -1,7 +1,7 @@
 import logo from '../assets/Logo.svg'
 import './Navbar.css'
 
-export default function Navbar({ user, activePage, onNavigate, onLogin, onSignOut }) {
+export default function Navbar({ user, demoMode, activePage, onNavigate, onLogin, onSignOut }) {
 
   return (
     <header className="site-nav">
@@ -45,15 +45,17 @@ export default function Navbar({ user, activePage, onNavigate, onLogin, onSignOu
           <button
             className={`nav-map-link${activePage === 'chat' ? ' nav-map-link--active' : ''}`}
             type="button"
-            onClick={() => user ? onNavigate('chat') : onLogin()}
-            aria-current={user && activePage === 'chat' ? 'page' : undefined}
+            onClick={() => onNavigate('chat')}
+            aria-current={activePage === 'chat' ? 'page' : undefined}
           >
             Ask AI
           </button>
         </nav>
       </div>
       <div className="site-nav-account">
-        {user ? (
+        {user && demoMode && user.isAnonymous ? (
+          <span className="nav-user-name">Demo admin</span>
+        ) : user ? (
           <>
             <span className="nav-user-name">{user.displayName || user.email}</span>
             <button className="nav-auth-button" onClick={onSignOut} type="button">

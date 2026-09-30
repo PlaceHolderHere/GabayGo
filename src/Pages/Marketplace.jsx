@@ -35,6 +35,7 @@ export default function Marketplace({
   locationsStatus,
   marketplaceListingsStatus,
   marketplaceListingsError,
+  demoMode,
   onRequestLogin,
   onShowLocation,
 }) {
@@ -54,15 +55,16 @@ export default function Marketplace({
   const [sellerOrderSnapshot, setSellerOrderSnapshot] = useState({ uid: null, orders: [] })
   const [ordersErrorState, setOrdersErrorState] = useState({ uid: null, error: '' })
   const [orderAction, setOrderAction] = useState({ orderId: null, status: '', error: '' })
-  const adminStatus = !db ? 'unavailable' : !user ? 'signed-out' : adminCheck.uid === user.uid ? adminCheck.status : 'checking'
+  const isDemoAdmin = demoMode && user?.isAnonymous === true
+  const adminStatus = !db ? 'unavailable' : !user ? 'signed-out' : isDemoAdmin ? 'admin' : adminCheck.uid === user.uid ? adminCheck.status : 'checking'
   const ordersError = ordersErrorState.uid === user?.uid ? ordersErrorState.error : ''
 
   useEffect(() => {
-    if (!db || !user) return undefined
+    if (!db || !user || isDemoAdmin) return undefined
     return onSnapshot(doc(db, 'admin', user.uid), (adminDoc) => {
       setAdminCheck({ uid: user.uid, status: adminDoc.exists() && adminDoc.data().enabled === true ? 'admin' : 'not-admin' })
     }, () => setAdminCheck({ uid: user.uid, status: 'error' }))
-  }, [user])
+  }, [user, isDemoAdmin])
 
   useEffect(() => {
     if (!db || !user) return undefined

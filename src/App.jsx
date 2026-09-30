@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth'
 import { collection, onSnapshot } from 'firebase/firestore'
-import { auth, db } from './firebase'
+import { auth, db, demoMode } from './firebase'
 import './App.css'
 import Map from './Components/Map'
 import Navbar from './Components/Navbar'
@@ -13,6 +13,9 @@ import Chat from './Pages/Chat'
 
 function App() {
   const [user, setUser] = useState(null)
+  const [demoAuthError, setDemoAuthError] = useState(() => (
+    demoMode && !auth ? 'Firebase is not configured. Add the Firebase environment variables and restart the app.' : ''
+  ))
   const [loginOpen, setLoginOpen] = useState(false)
   const [activePage, setActivePage] = useState('map')
   const [locations, setLocations] = useState([])
@@ -35,11 +38,26 @@ function App() {
     if (!auth) return undefined
 
     return onAuthStateChanged(auth, (nextUser) => {
+      if (!nextUser && demoMode) {
+        signInAnonymously(auth).catch((signInError) => {
+          setUser(null)
+          if (signInError.code === 'auth/operation-not-allowed') {
+            setDemoAuthError('Anonymous sign-in is disabled. Enable Authentication > Sign-in method > Anonymous in your Firebase project.')
+          } else if (signInError.code === 'auth/unauthorized-domain') {
+            setDemoAuthError('This domain is not authorized. Add localhost or your Netlify domain under Firebase Authentication > Settings > Authorized domains.')
+          } else {
+            setDemoAuthError(`Firebase anonymous sign-in failed (${signInError.code || 'unknown error'}). Check the Anonymous provider, authorized domains, and network access.`)
+          }
+        })
+        return
+      }
       setUser(nextUser)
+      if (nextUser) setDemoAuthError('')
       if (!nextUser) setActivePage('map')
-    }, () => {
+    }, (authError) => {
       setUser(null)
       setActivePage('map')
+      if (demoMode) setDemoAuthError(`Firebase authentication failed (${authError.code || 'unknown error'}).`)
     })
   }, [])
 
@@ -76,11 +94,17 @@ function App() {
     <div className="app-shell">
       <Navbar
         user={user}
+        demoMode={demoMode}
         activePage={activePage}
         onNavigate={setActivePage}
         onLogin={() => setLoginOpen(true)}
         onSignOut={() => signOut(auth)}
       />
+      {demoAuthError && (
+        <aside className="demo-auth-error" role="alert">
+          <strong>Demo access could not start.</strong> {demoAuthError}
+        </aside>
+      )}
       {activePage === 'home' && (
         <Home
           locations={locations}
@@ -140,6 +164,7 @@ function App() {
           locationsStatus={locationsStatus}
           marketplaceListingsStatus={marketplaceListingsStatus}
           marketplaceListingsError={marketplaceListingsError}
+          demoMode={demoMode}
           onRequestLogin={() => setLoginOpen(true)}
           onShowLocation={(locationId) => {
             setFocusedMapLocationId(locationId)
@@ -156,17 +181,15 @@ function App() {
           locationsError={locationsError}
           onRequestLogin={() => setLoginOpen(true)}
           focusedLocationId={focusedMapLocationId}
+          demoMode={demoMode}
         />
       )}
-      {user && (
-        <Chat
-          user={user}
-          locations={locations}
-          locationsStatus={locationsStatus}
-          locationsError={locationsError}
-          hidden={activePage !== 'chat'}
-        />
-      )}
+      <Chat
+        locations={locations}
+        locationsStatus={locationsStatus}
+        locationsError={locationsError}
+        hidden={activePage !== 'chat'}
+      />
       {loginOpen && <Login onClose={() => setLoginOpen(false)} />}
     </div>
   )

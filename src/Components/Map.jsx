@@ -104,7 +104,7 @@ function FocusLocation({ location }) {
   return null;
 }
 
-export default function Map({ user, locations, locationsStatus, locationsError, onRequestLogin, focusedLocationId }) {
+export default function Map({ user, demoMode, locations, locationsStatus, locationsError, onRequestLogin, focusedLocationId }) {
   const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' });
   const [saveError, setSaveError] = useState('');
   const [deleteFeedback, setDeleteFeedback] = useState({ locationId: null, status: '', error: '' });
@@ -133,10 +133,13 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
     endTime: '',
     hazardRadius: String(defaultHazardRadius),
   });
+  const isDemoAdmin = demoMode && user?.isAnonymous === true;
   const adminStatus = !db
     ? 'unavailable'
     : !user
       ? 'signed-out'
+      : isDemoAdmin
+        ? 'admin'
       : adminCheck.uid === user.uid ? adminCheck.status : 'checking';
   const userId = user?.uid;
   const isAdmin = adminStatus === 'admin';
@@ -168,7 +171,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
   }, []);
 
   useEffect(() => {
-    if (!db || !userId) return undefined;
+    if (!db || !userId || isDemoAdmin) return undefined;
 
     return onSnapshot(doc(db, 'admin', userId), (adminDoc) => {
       setAdminCheck({
@@ -178,7 +181,7 @@ export default function Map({ user, locations, locationsStatus, locationsError, 
     }, () => {
       setAdminCheck({ uid: userId, status: 'error' });
     });
-  }, [userId]);
+  }, [userId, isDemoAdmin]);
 
   useEffect(() => {
     if (routeState?.status !== 'loading' || !routeState.destination) return undefined;
