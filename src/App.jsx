@@ -18,7 +18,7 @@ function App() {
     demoMode && !auth ? 'Firebase is not configured. Add the Firebase environment variables and restart the app.' : ''
   ))
   const [loginOpen, setLoginOpen] = useState(false)
-  const [activePage, setActivePage] = useState('map')
+  const [activePage, setActivePage] = useState('home')
   const [locations, setLocations] = useState([])
   const [locationsStatus, setLocationsStatus] = useState(db ? 'loading' : 'unavailable')
   const [locationsError, setLocationsError] = useState('')
