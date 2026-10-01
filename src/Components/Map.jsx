@@ -105,14 +105,14 @@ function FocusLocation({ location }) {
   return null;
 }
 
-export default function Map({ user, demoMode, locations, locationsStatus, locationsError, onRequestLogin, focusedLocationId }) {
+export default function Map({ user, demoMode, locations, locationsStatus, locationsError, onRequestLogin, focusedMapLocation }) {
   const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' });
   const [saveError, setSaveError] = useState('');
   const [deleteFeedback, setDeleteFeedback] = useState({ locationId: null, status: '', error: '' });
   const [reportStatusFeedback, setReportStatusFeedback] = useState({ locationId: null, status: '', error: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [editingLocationId, setEditingLocationId] = useState(null);
-  const [panelOpen, setPanelOpen] = useState(() => !focusedLocationId);
+  const [panelOpen, setPanelOpen] = useState(() => !focusedMapLocation);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [activePanelTab, setActivePanelTab] = useState('search');
@@ -120,7 +120,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   const [categoryFilters, setCategoryFilters] = useState([]);
   const [selectedPosition, setSelectedPosition] = useState(null);
   const [selectedHazardId, setSelectedHazardId] = useState(null);
-  const [selectedLocationId, setSelectedLocationId] = useState(focusedLocationId || null);
+  const [selectedLocationId, setSelectedLocationId] = useState(focusedMapLocation?.id || null);
   const [routeState, setRouteState] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -923,7 +923,9 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
         <div className="map-container">
           <MapContainer center={[7.0435, 125.5315]} zoom={16.5} scrollWheelZoom className="leaflet-map">
             <FocusLocation
-              location={locations.find((location) => location.id === focusedLocationId)}
+              location={focusedMapLocation?.id
+                ? locations.find((location) => location.id === focusedMapLocation.id)
+                : focusedMapLocation}
             />
             <TileLayer
               attribution='&copy; OpenStreetMap contributors'
@@ -944,6 +946,20 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                     <strong>New location</strong>
                     <span>Temporary</span>
                     <p>Select a name and save this location.</p>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
+
+            {focusedMapLocation && !focusedMapLocation.id && (
+              <Marker
+                position={[focusedMapLocation.lat, focusedMapLocation.lng]}
+                icon={temporaryLocationIcon}
+              >
+                <Popup>
+                  <div className="popup-card popup-card--temporary">
+                    <strong>{focusedMapLocation.name || 'Custom Marketplace pin'}</strong>
+                    <span>{focusedMapLocation.lat.toFixed(5)}, {focusedMapLocation.lng.toFixed(5)}</span>
                   </div>
                 </Popup>
               </Marker>

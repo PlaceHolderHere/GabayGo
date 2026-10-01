@@ -108,13 +108,26 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    function validCustomMarketplaceLocation(location) {
+      return location is map
+        && location.keys().hasAll(['name', 'lat', 'lng'])
+        && location.keys().hasOnly(['name', 'lat', 'lng'])
+        && location.name == 'Custom map pin'
+        && (location.lat is int || location.lat is float)
+        && location.lat >= 7.0325707
+        && location.lat <= 7.0526288
+        && (location.lng is int || location.lng is float)
+        && location.lng >= 125.523891
+        && location.lng <= 125.542271;
+    }
+
     function validMarketplaceListing(data) {
       return data.keys().hasAll([
           'title', 'category', 'price', 'locationId', 'hours', 'offering', 'contactMethod', 'createdBy', 'createdAt'
         ])
         && data.keys().hasOnly([
           'title', 'category', 'price', 'locationId', 'hours', 'offering', 'contactMethod', 'createdBy', 'createdAt',
-          'createdByName', 'approvalStatus', 'reviewedAt', 'reviewedBy', 'active'
+          'createdByName', 'approvalStatus', 'reviewedAt', 'reviewedBy', 'active', 'customLocation'
         ])
         && data.title is string
         && data.title.size() > 0
@@ -124,8 +137,15 @@ service cloud.firestore {
         && data.price.size() > 0
         && data.price.size() <= 100
         && data.locationId is string
-        && exists(/databases/$(database)/documents/Locations/$(data.locationId))
-        && get(/databases/$(database)/documents/Locations/$(data.locationId)).data.category == 'Marketplace'
+        && (
+          (data.locationId.size() > 0
+            && !data.keys().hasAny(['customLocation'])
+            && exists(/databases/$(database)/documents/Locations/$(data.locationId))
+            && get(/databases/$(database)/documents/Locations/$(data.locationId)).data.category == 'Marketplace')
+          || (data.locationId == ''
+            && data.keys().hasAny(['customLocation'])
+            && validCustomMarketplaceLocation(data.customLocation))
+        )
         && data.hours is string
         && data.hours.size() > 0
         && data.hours.size() <= 200
@@ -180,7 +200,7 @@ service cloud.firestore {
           && request.resource.data.reviewedBy == null
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'title', 'category', 'price', 'locationId', 'hours', 'offering', 'contactMethod',
-            'approvalStatus', 'reviewedAt', 'reviewedBy'
+            'approvalStatus', 'reviewedAt', 'reviewedBy', 'customLocation'
           ]));
     }
 

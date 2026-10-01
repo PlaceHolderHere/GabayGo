@@ -24,7 +24,7 @@ function App() {
   const [marketplaceListings, setMarketplaceListings] = useState([])
   const [marketplaceListingsStatus, setMarketplaceListingsStatus] = useState(db ? 'loading' : 'unavailable')
   const [marketplaceListingsError, setMarketplaceListingsError] = useState('')
-  const [focusedMapLocationId, setFocusedMapLocationId] = useState(null)
+  const [focusedMapLocation, setFocusedMapLocation] = useState(null)
   const [hazardNoticeDismissed, setHazardNoticeDismissed] = useState(false)
   const activeHazards = locations
     .filter((location) => location.category === 'Hazard')
@@ -137,7 +137,7 @@ function App() {
                   className="hazard-notice-item"
                   type="button"
                   onClick={() => {
-                    setFocusedMapLocationId(hazard.id)
+                    setFocusedMapLocation({ id: hazard.id })
                     setActivePage('map')
                   }}
                 >
@@ -166,21 +166,21 @@ function App() {
           marketplaceListingsError={marketplaceListingsError}
           demoMode={demoMode}
           onRequestLogin={() => setLoginOpen(true)}
-          onShowLocation={(locationId) => {
-            setFocusedMapLocationId(locationId)
+          onShowLocation={(location) => {
+            setFocusedMapLocation(location)
             setActivePage('map')
           }}
         />
       )}
       {activePage === 'map' && (
         <Map
-          key={focusedMapLocationId || 'map'}
+          key={focusedMapLocation?.id || (focusedMapLocation ? `custom-${focusedMapLocation.lat}-${focusedMapLocation.lng}` : 'map')}
           user={user}
           locations={locations}
           locationsStatus={locationsStatus}
           locationsError={locationsError}
           onRequestLogin={() => setLoginOpen(true)}
-          focusedLocationId={focusedMapLocationId}
+          focusedMapLocation={focusedMapLocation}
           demoMode={demoMode}
         />
       )}

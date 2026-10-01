@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { addDoc, collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
+import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet'
+import { addDoc, collection, deleteDoc, deleteField, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
 import { db } from '../firebase'
+import BagoAplayaBorder from '../Components/BagoAplayaBorder'
+import { categoryIcons, temporaryLocationIcon } from '../Components/mapIcons'
+import { bagoAplayaViewBounds, isInBagoAplaya } from '../data/bagoAplaya'
+import 'leaflet/dist/leaflet.css'
 import './Marketplace.css'
 
 const listingCategories = ['Food', 'Produce', 'Retail', 'Crafts', 'Services', 'Other']
@@ -9,9 +14,54 @@ const emptyForm = {
   category: listingCategories[0],
   price: '',
   locationId: '',
+  customLocation: null,
   hours: '',
   offering: '',
   contactMethod: '',
+}
+
+function MarketplaceMapClickHandler({ onMapClick }) {
+  useMapEvents({
+    click(event) {
+      onMapClick(event.latlng)
+    },
+  })
+  return null
+}
+
+function MarketplaceLocationPicker({ locations, customLocation, onChooseLocation, onChooseCustomLocation }) {
+  return (
+    <MapContainer
+      bounds={bagoAplayaViewBounds}
+      boundsOptions={{ padding: [12, 12] }}
+      scrollWheelZoom
+      aria-label="Map for choosing a Marketplace listing location"
+      className="marketplace-location-map"
+    >
+      <TileLayer
+        attribution='&copy; OpenStreetMap contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <BagoAplayaBorder />
+      <MarketplaceMapClickHandler onMapClick={onChooseCustomLocation} />
+      {locations.map((location) => (
+        <Marker
+          key={location.id}
+          position={[location.lat, location.lng]}
+          icon={categoryIcons.Marketplace}
+          bubblingMouseEvents={false}
+          eventHandlers={{ click: () => onChooseLocation(location) }}
+        />
+      ))}
+      {customLocation && (
+        <Marker
+          position={[customLocation.lat, customLocation.lng]}
+          icon={temporaryLocationIcon}
+          interactive={false}
+        />
+      )}
+    </MapContainer>
+  )
 }
 
 function formatCreatedDate(timestamp) {
@@ -43,6 +93,7 @@ export default function Marketplace({
   const [categoryFilter, setCategoryFilter] = useState('All')
   const [locationFilter, setLocationFilter] = useState('All')
   const [formData, setFormData] = useState(emptyForm)
+  const [mapPickError, setMapPickError] = useState('')
   const [editingListingId, setEditingListingId] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
@@ -97,14 +148,21 @@ export default function Marketplace({
     () => new Map(marketplaceLocations.map((location) => [location.id, location])),
     [marketplaceLocations],
   )
+  const selectedLocation = locationById.get(formData.locationId)
+  const hasValidLocation = Boolean(
+    selectedLocation
+    || (formData.customLocation && isInBagoAplaya(formData.customLocation)),
+  )
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
   const visibleListings = marketplaceListings
     .filter((listing) => {
       if (listing.active === false && listing.createdBy !== user?.uid && adminStatus !== 'admin') return false
-      const location = locationById.get(listing.locationId)
+      const location = listing.customLocation || locationById.get(listing.locationId)
       if (!location) return false
       const matchesCategory = categoryFilter === 'All' || listing.category === categoryFilter
-      const matchesLocation = locationFilter === 'All' || listing.locationId === locationFilter
+      const matchesLocation = locationFilter === 'All'
+        || (locationFilter === '__custom__' && Boolean(listing.customLocation))
+        || listing.locationId === locationFilter
       const searchableText = `${listing.title} ${listing.category} ${listing.price} ${listing.offering} ${listing.hours} ${listing.contactMethod} ${location.name}`.toLocaleLowerCase()
       return matchesCategory && matchesLocation && (!normalizedSearch || searchableText.includes(normalizedSearch))
     })
@@ -117,7 +175,7 @@ export default function Marketplace({
     db
     && user
     && locationsStatus === 'ready'
-    && marketplaceLocations.some((location) => location.id === formData.locationId)
+    && hasValidLocation
     && formData.title.trim()
     && formData.price.trim()
     && formData.hours.trim()
@@ -127,14 +185,41 @@ export default function Marketplace({
 
   const handleInputChange = (event) => {
     const { name, value } = event.target
-    setFormData((current) => ({ ...current, [name]: value }))
+    setFormData((current) => ({
+      ...current,
+      [name]: value,
+      ...(name === 'locationId' ? { customLocation: null } : {}),
+    }))
+    if (name === 'locationId') setMapPickError('')
+    setSaveSuccess(false)
+    setSaveSuccessMessage('')
+  }
+
+  const handleChooseLocation = (location) => {
+    setFormData((current) => ({ ...current, locationId: location.id, customLocation: null }))
+    setMapPickError('')
+    setSaveSuccess(false)
+    setSaveSuccessMessage('')
+  }
+
+  const handleChooseCustomLocation = ({ lat, lng }) => {
+    if (!isInBagoAplaya({ lat, lng })) {
+      setMapPickError('Choose a custom point inside the Bago-Aplaya border.')
+      return
+    }
+    setFormData((current) => ({
+      ...current,
+      locationId: '',
+      customLocation: { name: 'Custom map pin', lat, lng },
+    }))
+    setMapPickError('')
     setSaveSuccess(false)
     setSaveSuccessMessage('')
   }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    if (!db || !user || isSaving || !marketplaceLocations.some((location) => location.id === formData.locationId)) return
+    if (!db || !user || isSaving || !hasValidLocation) return
 
     setIsSaving(true)
     setSaveError('')
@@ -145,14 +230,16 @@ export default function Marketplace({
         title: formData.title.trim(),
         category: formData.category,
         price: formData.price.trim(),
-        locationId: formData.locationId,
+        locationId: selectedLocation?.id || '',
         hours: formData.hours.trim(),
         offering: formData.offering.trim(),
         contactMethod: formData.contactMethod.trim(),
       }
+      if (formData.customLocation) listingData.customLocation = formData.customLocation
       if (editingListingId) {
         await updateDoc(doc(db, 'MarketplaceListings', editingListingId), {
           ...listingData,
+          ...(!formData.customLocation ? { customLocation: deleteField() } : {}),
           approvalStatus: 'underReview',
           reviewedAt: null,
           reviewedBy: null,
@@ -169,6 +256,7 @@ export default function Marketplace({
       }
       setSaveSuccessMessage(editingListingId ? 'Listing updated and sent for admin review.' : 'Listing published.')
       setFormData(emptyForm)
+      setMapPickError('')
       setEditingListingId(null)
       setSaveSuccess(true)
     } catch {
@@ -185,11 +273,13 @@ export default function Marketplace({
       category: listing.category || listingCategories[0],
       price: listing.price || '',
       locationId: listing.locationId || '',
+      customLocation: listing.customLocation || null,
       hours: listing.hours || '',
       offering: listing.offering || '',
       contactMethod: listing.contactMethod || '',
     })
     setSaveError('')
+    setMapPickError('')
     setSaveSuccess(false)
     setSaveSuccessMessage('')
   }
@@ -197,6 +287,7 @@ export default function Marketplace({
   const handleCancelEdit = () => {
     setEditingListingId(null)
     setFormData(emptyForm)
+    setMapPickError('')
     setSaveError('')
     setSaveSuccess(false)
     setSaveSuccessMessage('')
@@ -332,23 +423,38 @@ export default function Marketplace({
                   {listingCategories.map((category) => <option key={category}>{category}</option>)}
                 </select>
               </label>
-              <label>
-                Marketplace location
-                <select
-                  name="locationId"
-                  value={formData.locationId}
-                  onChange={handleInputChange}
-                  required
-                  disabled={locationsStatus !== 'ready' || marketplaceLocations.length === 0}
-                >
-                  <option value="">Choose a Marketplace location</option>
-                  {marketplaceLocations.map((location) => (
-                    <option value={location.id} key={location.id}>{location.name}</option>
-                  ))}
-                </select>
-              </label>
+              <div className="marketplace-location-picker">
+                <p className="marketplace-location-picker-label">Choose a location on the map</p>
+                <MarketplaceLocationPicker
+                  locations={marketplaceLocations}
+                  customLocation={formData.customLocation}
+                  onChooseLocation={handleChooseLocation}
+                  onChooseCustomLocation={handleChooseCustomLocation}
+                />
+                <p className="marketplace-form-note">Select a saved Marketplace pin, or click inside the Bago-Aplaya border to place a custom pin.</p>
+                <label>
+                  Marketplace location
+                  <select
+                    name="locationId"
+                    value={formData.locationId}
+                    onChange={handleInputChange}
+                    disabled={locationsStatus !== 'ready'}
+                  >
+                    <option value="">Choose a saved pin or use the map</option>
+                    {marketplaceLocations.map((location) => (
+                      <option value={location.id} key={location.id}>{location.name}</option>
+                    ))}
+                  </select>
+                </label>
+                {formData.customLocation && (
+                  <p className="marketplace-location-selected" role="status">
+                    Custom pin: {formData.customLocation.lat.toFixed(5)}, {formData.customLocation.lng.toFixed(5)}
+                  </p>
+                )}
+                {mapPickError && <p className="marketplace-feedback marketplace-feedback--error" role="alert">{mapPickError}</p>}
+              </div>
               {locationsStatus === 'ready' && marketplaceLocations.length === 0 && (
-                <p className="marketplace-form-note">There are no Marketplace locations yet. An admin must add one to the map before listings can be posted.</p>
+                <p className="marketplace-form-note">There are no saved Marketplace pins yet. You can still choose a custom point on the map.</p>
               )}
               <label>
                 Price
@@ -453,6 +559,7 @@ export default function Marketplace({
               Marketplace location
               <select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)}>
                 <option value="All">All locations</option>
+                <option value="__custom__">Custom map pins</option>
                 {marketplaceLocations.map((location) => (
                   <option value={location.id} key={location.id}>{location.name}</option>
                 ))}
@@ -472,7 +579,7 @@ export default function Marketplace({
           {marketplaceListingsStatus === 'ready' && visibleListings.length > 0 && (
             <ul className="marketplace-listing-grid">
               {visibleListings.map((listing) => {
-                const location = locationById.get(listing.locationId)
+                const location = listing.customLocation || locationById.get(listing.locationId)
                 return (
                   <li className="marketplace-listing" key={listing.id}>
                     <div className="marketplace-listing-heading">
@@ -494,14 +601,25 @@ export default function Marketplace({
                       <div>
                         <dt>Marketplace location</dt>
                         <dd>
-                          <button
-                            className="marketplace-location-link"
-                            type="button"
-                            onClick={() => onShowLocation(location.id)}
-                            aria-label={`Show ${location.name} on map`}
-                          >
-                            {location.name} <span aria-hidden="true">↗</span>
-                          </button>
+                          {location.id ? (
+                            <button
+                              className="marketplace-location-link"
+                              type="button"
+                              onClick={() => onShowLocation({ id: location.id })}
+                              aria-label={`Show ${location.name} on map`}
+                            >
+                              {location.name} <span aria-hidden="true">↗</span>
+                            </button>
+                          ) : (
+                            <button
+                              className="marketplace-location-link"
+                              type="button"
+                              onClick={() => onShowLocation(location)}
+                              aria-label={`Show ${location.name} on map`}
+                            >
+                              {location.name} ({location.lat.toFixed(5)}, {location.lng.toFixed(5)}) <span aria-hidden="true">↗</span>
+                            </button>
+                          )}
                         </dd>
                       </div>
                       <div>
