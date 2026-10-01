@@ -10,6 +10,7 @@ import Marketplace from './Pages/Marketplace'
 import Home from './Pages/Home'
 import Login from './Pages/Login'
 import Chat from './Pages/Chat'
+import { listenForForegroundMessages } from './notifications'
 
 function App() {
   const [user, setUser] = useState(null)
@@ -62,6 +63,19 @@ function App() {
       setActivePage('map')
       if (demoMode) setDemoAuthError(`Firebase authentication failed (${authError.code || 'unknown error'}).`)
     })
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    let unsubscribe = () => {}
+    listenForForegroundMessages().then((stopListening) => {
+      if (active) unsubscribe = stopListening
+      else stopListening()
+    }).catch(() => {})
+    return () => {
+      active = false
+      unsubscribe()
+    }
   }, [])
 
   useEffect(() => {

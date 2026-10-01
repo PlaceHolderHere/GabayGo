@@ -181,6 +181,23 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /NotificationSubscriptions/{subscriptionId} {
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow create, update: if request.auth != null
+        && request.resource.data.keys().hasAll(['userId', 'deviceId', 'token', 'enabled', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['userId', 'deviceId', 'token', 'enabled', 'updatedAt'])
+        && request.resource.data.userId == request.auth.uid
+        && subscriptionId == request.auth.uid + '_' + request.resource.data.deviceId
+        && request.resource.data.deviceId is string
+        && request.resource.data.deviceId.size() > 0
+        && request.resource.data.token is string
+        && request.resource.data.token.size() > 0
+        && request.resource.data.enabled is bool
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
     match /VolunteerSignups/{uid} {
       allow read: if request.auth != null
         && (request.auth.uid == uid || isAdmin());

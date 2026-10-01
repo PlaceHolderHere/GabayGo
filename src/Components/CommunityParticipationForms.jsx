@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
+import { disablePushNotifications, enablePushNotifications, getPushStatus } from '../notifications'
 import './CommunityParticipationForms.css'
 
 const updateTopics = ['Garbage collection', 'Outages', 'Services', 'Marketplace', 'Garden activities', 'Events', 'Schedules', 'Evacuation and relief', 'Community reports']
@@ -13,6 +14,18 @@ export default function CommunityParticipationForms({ user, onRequestLogin }) {
   const [volunteerForm, setVolunteerForm] = useState({ name: user?.displayName || '', contact: '', methods: [], notes: '', createdAt: null })
   const [volunteerStatus, setVolunteerStatus] = useState(user && db ? 'loading' : 'idle')
   const [volunteerFeedback, setVolunteerFeedback] = useState('')
+  const [pushStatus, setPushStatus] = useState({ state: 'loading', message: '' })
+  const [pushBusy, setPushBusy] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    getPushStatus(user?.uid ? { uid: user.uid } : null).then((status) => {
+      if (active) setPushStatus(status)
+    }).catch(() => {
+      if (active) setPushStatus({ state: 'unsupported', message: 'Notification status could not be checked in this browser.' })
+    })
+    return () => { active = false }
+  }, [user?.uid])
 
   useEffect(() => {
     if (!db || !user?.uid) return undefined
@@ -89,6 +102,21 @@ export default function CommunityParticipationForms({ user, onRequestLogin }) {
     }
   }
 
+  const handlePushToggle = async () => {
+    if (!user || pushBusy) return
+    setPushBusy(true)
+    try {
+      const status = pushStatus.state === 'enabled'
+        ? await disablePushNotifications(user)
+        : await enablePushNotifications(user)
+      setPushStatus(status)
+    } catch (error) {
+      setPushStatus((current) => ({ ...current, message: error.message || 'Notification settings could not be updated.' }))
+    } finally {
+      setPushBusy(false)
+    }
+  }
+
   return (
     <section className="updates-community-forms" aria-labelledby="updates-community-title">
       <header className="updates-community-header">
@@ -122,6 +150,16 @@ export default function CommunityParticipationForms({ user, onRequestLogin }) {
           <button className="updates-form-submit" type="submit" disabled={!user || !db || preferencesStatus === 'saving' || preferencesStatus === 'loading'}>
             {preferencesStatus === 'saving' ? 'Saving…' : 'Save update preferences'}
           </button>
+          <div className="updates-push-settings">
+            <h3>Event reminders</h3>
+            <p>{pushStatus.message || 'Checking notification support…'}</p>
+            {pushStatus.state === 'signed-out' && <button className="updates-form-login" type="button" onClick={onRequestLogin}>Log in</button>}
+            {['ready', 'enabled'].includes(pushStatus.state) && (
+              <button className="updates-form-submit" type="button" onClick={handlePushToggle} disabled={pushBusy}>
+                {pushBusy ? 'Updating…' : pushStatus.state === 'enabled' ? 'Turn off reminders' : 'Turn on reminders'}
+              </button>
+            )}
+          </div>
         </form>
 
         <form className="updates-community-form" onSubmit={handleSaveVolunteerForm}>
