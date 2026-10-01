@@ -1,8 +1,9 @@
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
-import { BriefcaseBusiness, MessageSquareWarning, Store } from 'lucide-react'
+import { BriefcaseBusiness, ExternalLink, MessageSquareWarning, PhoneCall, Store } from 'lucide-react'
 import BagoAplayaBorder from '../Components/BagoAplayaBorder'
 import CommunityParticipationForms from '../Components/CommunityParticipationForms'
 import { categoryIcons, defaultIcon } from '../Components/mapIcons'
+import { officialContacts, officialServices } from '../data/officialResources'
 import logo from '../assets/Logo.svg'
 import 'leaflet/dist/leaflet.css'
 import './Home.css'
@@ -41,6 +42,10 @@ function getLocationDate(location) {
   return date && !Number.isNaN(date.getTime())
     ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     : 'Community update'
+}
+
+function phoneHref(number) {
+  return `tel:${number.split('/')[0].replace(/[^\d+]/g, '')}`
 }
 
 export default function Home({ user, locations, locationsStatus, onNavigate, onRequestLogin }) {
@@ -100,6 +105,55 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
               </button>
             )
           })}
+        </div>
+      </section>
+
+      <section className="home-resources" aria-labelledby="home-resources-title">
+        <header className="home-resources-heading">
+          <p className="home-kicker">Official directory</p>
+          <h2 id="home-resources-title">Emergency resources <em>&amp; services</em></h2>
+          <p>Contact details and service information sourced from Davao City and local agencies. Please confirm availability before visiting.</p>
+        </header>
+        <div className="home-resources-grid">
+          <section className="home-resource-group" aria-labelledby="home-emergency-contacts-title">
+            <h3 id="home-emergency-contacts-title">Emergency contacts</h3>
+            <ul className="home-contact-list">
+              {officialContacts.map((contact) => (
+                <li className="home-contact-item" key={contact.name}>
+                  <div>
+                    <h4>{contact.name}</h4>
+                    <a className="home-contact-number" href={phoneHref(contact.number)}>
+                      <PhoneCall size={15} aria-hidden="true" />{contact.number}
+                    </a>
+                    <p>{contact.note}</p>
+                  </div>
+                  <a className="home-resource-source" href={contact.sourceUrl} target="_blank" rel="noreferrer" aria-label={`Open official source for ${contact.name}`}>
+                    <ExternalLink size={16} aria-hidden="true" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="home-resource-group" aria-labelledby="home-city-services-title">
+            <h3 id="home-city-services-title">City services</h3>
+            <ul className="home-service-list">
+              {officialServices.map((service) => (
+                <li className="home-official-service" key={service.name}>
+                  <div className="home-official-service-heading">
+                    <h4>{service.name}</h4>
+                    {service.contact && <a href={phoneHref(service.contact)}>{service.contact}</a>}
+                  </div>
+                  <p>{service.description}</p>
+                  {service.hours && <p className="home-service-hours"><strong>Hours:</strong> {service.hours}</p>}
+                  <div className="home-service-links">
+                    <a href={service.sourceUrl} target="_blank" rel="noreferrer">Official source <ExternalLink size={13} aria-hidden="true" /></a>
+                    {service.actionUrl && <a href={service.actionUrl} target="_blank" rel="noreferrer">Open city portal <ExternalLink size={13} aria-hidden="true" /></a>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
         </div>
       </section>
 
