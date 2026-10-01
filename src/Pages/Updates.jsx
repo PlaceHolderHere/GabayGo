@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { MapContainer, Marker, TileLayer } from 'react-leaflet'
+import BagoAplayaBorder from '../Components/BagoAplayaBorder'
 import { categoryIcons, defaultIcon } from '../Components/mapIcons'
 import 'leaflet/dist/leaflet.css'
 import './Updates.css'
@@ -511,6 +512,7 @@ export default function Updates({ locations, locationsStatus, locationsError }) 
                     attribution='&copy; OpenStreetMap contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
+                  <BagoAplayaBorder />
                   <Marker
                     position={[selectedLocation.lat, selectedLocation.lng]}
                     icon={categoryIcons[selectedLocation.category] || defaultIcon}

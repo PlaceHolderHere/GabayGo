@@ -1,5 +1,6 @@
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
 import { BriefcaseBusiness, MessageSquareWarning, Store } from 'lucide-react'
+import BagoAplayaBorder from '../Components/BagoAplayaBorder'
 import { categoryIcons, defaultIcon } from '../Components/mapIcons'
 import logo from '../assets/Logo.svg'
 import 'leaflet/dist/leaflet.css'
@@ -144,6 +145,7 @@ export default function Home({ locations, locationsStatus, onNavigate, onRequest
               attribution='&copy; OpenStreetMap contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            <BagoAplayaBorder />
             {locations.slice(0, 18).map((location) => (
               <Marker
                 key={location.id}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import BagoAplayaBorder from './BagoAplayaBorder';
 import { categoryIcons, defaultIcon, temporaryLocationIcon } from './mapIcons';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
@@ -928,6 +929,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
               attribution='&copy; OpenStreetMap contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            <BagoAplayaBorder />
 
             <ClickHandler onMapClick={handleMapClick} />
 
