@@ -511,7 +511,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
             if (window.innerWidth <= 860) setNotificationsOpen(false);
           }}
         >
-          <span aria-hidden="true">{panelOpen ? '‹' : '›'}</span>
+          <span aria-hidden="true">{panelOpen ? '×' : '›'}</span>
         </button>
 
         {panelOpen && (

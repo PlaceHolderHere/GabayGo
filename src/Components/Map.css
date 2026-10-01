@@ -969,7 +969,10 @@
   }
 
   .map-panel-toggle--panel-open {
-    left: calc(0.65rem + var(--map-panel-width));
+    top: 0.85rem;
+    left: calc(0.65rem + var(--map-panel-width) - 3rem);
+    z-index: 1020;
+    transform: none;
   }
 
   .map-panel-toggle--editing {
