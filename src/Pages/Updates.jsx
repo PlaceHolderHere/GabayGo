@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
+import { deleteDoc, doc } from 'firebase/firestore'
 import { MapContainer, Marker, TileLayer } from 'react-leaflet'
+import { db } from '../firebase'
 import BagoAplayaBorder from '../Components/BagoAplayaBorder'
 import { categoryIcons, defaultIcon } from '../Components/mapIcons'
 import 'leaflet/dist/leaflet.css'
 import './Updates.css'
 
-const scheduledCategories = ['Marketplace', 'Outage', 'Service']
-const allCategories = ['Marketplace', 'Outage', 'Service', 'Report']
+const scheduledCategories = ['Marketplace', 'Outage', 'Service', 'Garden', 'Event', 'Schedule', 'Evacuation', 'Relief']
+const allCategories = ['Location', 'Service', 'Marketplace', 'Garden', 'Event', 'Schedule', 'Report', 'Outage', 'Hazard', 'Evacuation', 'Relief']
+const calendarCategories = ['Marketplace', 'Service', 'Garden', 'Event', 'Schedule', 'Report', 'Outage', 'Evacuation', 'Relief']
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const reportStatuses = ['Submitted', 'Under review', 'Resolved']
 
@@ -60,7 +63,7 @@ function makeEvent(location, kind, date, extra = {}) {
   }
 }
 
-function getLocationEvents(locations) {
+function getLocationEvents(locations, schedules) {
   const events = []
 
   locations.forEach((location) => {
@@ -105,6 +108,21 @@ function getLocationEvents(locations) {
         updatedBy: location.resolvedBy,
       })
       if (resolvedEvent) events.push(resolvedEvent)
+    }
+  })
+
+  schedules.forEach((schedule) => {
+    const startDate = schedule.startDate || schedule.endDate
+    const endDate = schedule.endDate || schedule.startDate
+    if (parseDateKey(startDate) && parseDateKey(endDate)) {
+      events.push(makeEvent(schedule, 'scheduled', startDate, {
+        id: `schedule-${schedule.id}-scheduled`,
+        startDate,
+        endDate,
+        startTime: schedule.startTime || '',
+        endTime: schedule.endTime || '',
+        createdAt: schedule.createdAt,
+      }))
     }
   })
 
@@ -186,14 +204,15 @@ function reportHistory(location) {
   ].filter((item) => item.timestamp || item.fallbackDate)
 }
 
-export default function Updates({ locations, locationsStatus, locationsError }) {
+export default function Updates({ user, locations, locationsStatus, locationsError, schedules = [], schedulesStatus, schedulesError }) {
   const [currentTime, setCurrentTime] = useState(() => Date.now())
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const today = new Date()
     return new Date(today.getFullYear(), today.getMonth(), 1)
   })
   const [selectedDate, setSelectedDate] = useState(() => dateKey(new Date()))
-  const [selectedLocationId, setSelectedLocationId] = useState(null)
+  const [selectedEventId, setSelectedEventId] = useState(null)
+  const [scheduleDeleteState, setScheduleDeleteState] = useState({ id: null, status: '', error: '' })
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilters, setCategoryFilters] = useState([])
   const [reportStatusFilter, setReportStatusFilter] = useState('All')
@@ -210,14 +229,14 @@ export default function Updates({ locations, locationsStatus, locationsError }) 
   }, [])
 
   useEffect(() => {
-    if (!selectedLocationId) return undefined
+    if (!selectedEventId) return undefined
 
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setSelectedLocationId(null)
+      if (event.key === 'Escape') setSelectedEventId(null)
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedLocationId])
+  }, [selectedEventId])
 
   const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1)
   const gridStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1 - monthStart.getDay())
@@ -225,7 +244,7 @@ export default function Updates({ locations, locationsStatus, locationsError }) 
     const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index)
     return { date, key: dateKey(date), isCurrentMonth: date.getMonth() === visibleMonth.getMonth() }
   })
-  const allEvents = getLocationEvents(locations)
+  const allEvents = getLocationEvents(locations, schedules)
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
   const filteredEvents = allEvents.filter((event) => {
     const { location } = event
@@ -247,24 +266,40 @@ export default function Updates({ locations, locationsStatus, locationsError }) 
   const dailyUpdates = [...filteredEvents].sort((first, second) => getEventTimestamp(second) - getEventTimestamp(first))
   const dailyUpdatesToShow = showAllUpdates ? dailyUpdates : dailyUpdates.slice(0, 8)
   const weeks = Array.from({ length: 6 }, (_, weekIndex) => dates.slice(weekIndex * 7, weekIndex * 7 + 7))
-  const selectedLocation = locations.find((location) => location.id === selectedLocationId)
+  const selectedEvent = allEvents.find((event) => event.id === selectedEventId)
+  const selectedLocation = selectedEvent?.location
   const now = new Date(currentTime)
 
   const changeMonth = (amount) => {
     setVisibleMonth((month) => new Date(month.getFullYear(), month.getMonth() + amount, 1))
-    setSelectedLocationId(null)
+    setSelectedEventId(null)
   }
 
   const showToday = () => {
     const today = new Date()
     setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1))
     setSelectedDate(dateKey(today))
-    setSelectedLocationId(null)
+    setSelectedEventId(null)
   }
 
   const selectEvent = (event) => {
     setSelectedDate(event.startDate)
-    setSelectedLocationId(event.locationId)
+    setSelectedEventId(event.id)
+    setScheduleDeleteState({ id: null, status: '', error: '' })
+  }
+
+  const handleDeleteSchedule = async (schedule) => {
+    if (!db || !user || user.uid !== schedule.createdBy || scheduleDeleteState.status === 'deleting') return
+    if (!window.confirm(`Delete schedule "${schedule.name}"? This cannot be undone.`)) return
+
+    setScheduleDeleteState({ id: schedule.id, status: 'deleting', error: '' })
+    try {
+      await deleteDoc(doc(db, 'Schedules', schedule.id))
+      setSelectedEventId(null)
+      setScheduleDeleteState({ id: null, status: '', error: '' })
+    } catch {
+      setScheduleDeleteState({ id: schedule.id, status: '', error: 'Schedule could not be deleted. Check your access and Firestore rules.' })
+    }
   }
 
   const clearFilters = () => {
@@ -360,11 +395,12 @@ export default function Updates({ locations, locationsStatus, locationsError }) 
           <button className="updates-clear-filters" type="button" onClick={clearFilters}>Clear filters</button>
         </div>
 
-        {locationsStatus === 'loading' && <p className="updates-empty">Loading updates…</p>}
+        {(locationsStatus === 'loading' || schedulesStatus === 'loading') && <p className="updates-empty">Loading updates…</p>}
         {locationsStatus === 'error' && <p className="updates-empty updates-empty--error">{locationsError}</p>}
-        {locationsStatus === 'ready' && dailyUpdates.length === 0 && <p className="updates-empty">No updates match these filters.</p>}
+        {schedulesStatus === 'error' && <p className="updates-empty updates-empty--error">{schedulesError}</p>}
+        {locationsStatus === 'ready' && schedulesStatus !== 'loading' && dailyUpdates.length === 0 && <p className="updates-empty">No updates match these filters.</p>}
 
-        {locationsStatus === 'ready' && dailyUpdates.length > 0 && (
+        {locationsStatus === 'ready' && schedulesStatus !== 'loading' && dailyUpdates.length > 0 && (
           <div className="updates-feed">
             {dailyUpdatesToShow.map((event) => (
               <button
@@ -413,11 +449,9 @@ export default function Updates({ locations, locationsStatus, locationsError }) 
           {visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
         </div>
         <div className="updates-legend" aria-label="Event categories">
-          {[
-            ['marketplace', 'Marketplace'], ['outage', 'Outage'], ['service', 'Service'], ['report', 'Report'],
-          ].map(([category, label]) => (
-            <span className={`updates-legend-item updates-legend-item--${category}`} key={category}>
-              <i aria-hidden="true" />{label}
+          {calendarCategories.map((category) => (
+            <span className={`updates-legend-item updates-legend-item--${category.toLowerCase()}`} key={category}>
+              <i aria-hidden="true" />{category}
             </span>
           ))}
         </div>
@@ -442,7 +476,7 @@ export default function Updates({ locations, locationsStatus, locationsError }) 
                       key={key}
                       onClick={() => {
                         setSelectedDate(key)
-                        setSelectedLocationId(null)
+                        setSelectedEventId(null)
                       }}
                     >
                       <span>{date.getDate()}</span>
@@ -472,8 +506,8 @@ export default function Updates({ locations, locationsStatus, locationsError }) 
           })}
         </div>
 
-        {selectedLocation && (
-          <div className="updates-details-backdrop" onClick={() => setSelectedLocationId(null)}>
+        {selectedEvent && selectedLocation && (
+          <div className="updates-details-backdrop" onClick={() => setSelectedEventId(null)}>
             <aside
               className="updates-details"
               role="dialog"
@@ -495,11 +529,12 @@ export default function Updates({ locations, locationsStatus, locationsError }) 
                       {getReportStatus(selectedLocation)}
                     </span>
                   )}
-                  <button className="updates-details-close" type="button" onClick={() => setSelectedLocationId(null)} aria-label="Close location details">
+                  <button className="updates-details-close" type="button" onClick={() => setSelectedEventId(null)} aria-label="Close update details">
                     ×
                   </button>
                 </div>
               </header>
+              {Number.isFinite(selectedLocation.lat) && Number.isFinite(selectedLocation.lng) ? (
               <div className="updates-detail-map" aria-label={`Map location for ${selectedLocation.name}`}>
                 <MapContainer
                   center={[selectedLocation.lat, selectedLocation.lng]}
@@ -519,13 +554,14 @@ export default function Updates({ locations, locationsStatus, locationsError }) 
                   />
                 </MapContainer>
               </div>
+              ) : <p className="updates-detail-locationless">This schedule has no map location.</p>}
               <p className="updates-detail-description">{selectedLocation.description}</p>
               {scheduledCategories.includes(selectedLocation.category) && (
                 <p className="updates-detail-date">
-                  <strong>Date: </strong>{selectedLocation.startDate || 'Date not set'}{selectedLocation.endDate && selectedLocation.endDate !== selectedLocation.startDate ? ` – ${selectedLocation.endDate}` : ''}
+                  <strong>Date: </strong>{selectedEvent.startDate || 'Date not set'}{selectedEvent.endDate && selectedEvent.endDate !== selectedEvent.startDate ? ` – ${selectedEvent.endDate}` : ''}
                   <br/>
-                  <strong>Time: </strong>{selectedLocation.startTime ? `${selectedLocation.startTime}` : ''}
-                  {selectedLocation.endTime ? ` – ${selectedLocation.endTime}` : ''}
+                  <strong>Time: </strong>{selectedEvent.startTime ? `${selectedEvent.startTime}` : ''}
+                  {selectedEvent.endTime ? ` – ${selectedEvent.endTime}` : ''}
                 </p>
               )}
               {selectedLocation.category === 'Report' && (
@@ -548,8 +584,27 @@ export default function Updates({ locations, locationsStatus, locationsError }) 
                   })}
                 </ol>
               )}
-              <p className="updates-detail-latitude"><strong>Latitude:</strong> {selectedLocation.lat.toFixed(5)}</p>
-              <p className="updates-detail-longitude"><strong>Longitude:</strong> {selectedLocation.lng.toFixed(5)}</p>
+              {Number.isFinite(selectedLocation.lat) && Number.isFinite(selectedLocation.lng) && (
+                <>
+                  <p className="updates-detail-latitude"><strong>Latitude:</strong> {selectedLocation.lat.toFixed(5)}</p>
+                  <p className="updates-detail-longitude"><strong>Longitude:</strong> {selectedLocation.lng.toFixed(5)}</p>
+                </>
+              )}
+              {selectedLocation.category === 'Schedule' && user?.uid === selectedLocation.createdBy && (
+                <div className="updates-schedule-actions">
+                  <button
+                    className="updates-schedule-delete"
+                    type="button"
+                    onClick={() => handleDeleteSchedule(selectedLocation)}
+                    disabled={scheduleDeleteState.status === 'deleting'}
+                  >
+                    {scheduleDeleteState.status === 'deleting' ? 'Deleting schedule…' : 'Delete schedule'}
+                  </button>
+                  {scheduleDeleteState.id === selectedLocation.id && scheduleDeleteState.error && (
+                    <p className="updates-empty updates-empty--error" role="alert">{scheduleDeleteState.error}</p>
+                  )}
+                </div>
+              )}
             </aside>
           </div>
         )}

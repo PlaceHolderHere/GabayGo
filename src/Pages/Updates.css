@@ -211,6 +211,26 @@
 .updates-feed-item--marketplace,
 .updates-detail-category--marketplace,
 .updates-calendar-event--marketplace { --event-color: #43845b; }
+.updates-feed-item--garden,
+.updates-detail-category--garden,
+.updates-calendar-event--garden,
+.updates-legend-item--garden { --event-color: #4b7b42; }
+.updates-feed-item--event,
+.updates-detail-category--event,
+.updates-calendar-event--event,
+.updates-legend-item--event { --event-color: #c56b2d; }
+.updates-feed-item--schedule,
+.updates-detail-category--schedule,
+.updates-calendar-event--schedule,
+.updates-legend-item--schedule { --event-color: #236b5c; }
+.updates-feed-item--evacuation,
+.updates-detail-category--evacuation,
+.updates-calendar-event--evacuation,
+.updates-legend-item--evacuation { --event-color: #b93824; }
+.updates-feed-item--relief,
+.updates-detail-category--relief,
+.updates-calendar-event--relief,
+.updates-legend-item--relief { --event-color: #287c8e; }
 .updates-feed-item--location,
 .updates-detail-category--location,
 .updates-calendar-event--location { --event-color: var(--color-brown); }
@@ -567,7 +587,8 @@
 .updates-detail-description,
 .updates-detail-date,
 .updates-detail-latitude,
-.updates-detail-longitude {
+.updates-detail-longitude,
+.updates-detail-locationless {
   margin: 0;
   color: var(--color-muted);
   font-size: 0.78rem;
@@ -575,6 +596,29 @@
 }
 
 .updates-detail-latitude, .updates-detail-longitude { font-size: 0.68rem; }
+
+.updates-schedule-actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.updates-schedule-delete {
+  min-height: 2.4rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #b93824;
+  border-radius: 3px;
+  background: #b93824;
+  color: white;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.updates-schedule-delete:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
 
 .updates-report-history {
   display: grid;

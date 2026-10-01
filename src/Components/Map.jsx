@@ -8,10 +8,11 @@ import 'leaflet/dist/leaflet.css';
 import './Map.css';
 
 // INITIAL LOCATIONS
-const categories = ['Location', 'Outage', 'Service', 'Marketplace', 'Report', 'Hazard']
-const timeSensitiveCategories = ['Marketplace', 'Outage', 'Service']
+const categories = ['Location', 'Service', 'Marketplace', 'Garden', 'Event', 'Schedule', 'Report', 'Outage', 'Hazard', 'Evacuation', 'Relief']
+const timeSensitiveCategories = ['Marketplace', 'Outage', 'Service', 'Garden', 'Event', 'Schedule', 'Evacuation', 'Relief']
 const timeStampedCategories = ['Report']
 const defaultHazardRadius = 500
+const urgentCategories = ['Hazard', 'Outage', 'Evacuation', 'Relief']
 
 function formatRouteDistance(meters) {
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;
@@ -59,15 +60,15 @@ function getTimestampDate(timestamp) {
   return typeof timestamp?.toDate === 'function' ? timestamp.toDate() : null;
 }
 
-function formatHazardUpdatedAt(location) {
+function formatUrgentUpdatedAt(location) {
   const updatedAt = getTimestampDate(location.updatedAt) || getTimestampDate(location.createdAt);
   return updatedAt ? updatedAt.toLocaleString() : 'Unavailable';
 }
 
 function getAlertOrder(location, now) {
-  if (location.category === 'Hazard') {
+  if (['Hazard', 'Evacuation', 'Relief'].includes(location.category)) {
     const updatedAt = getTimestampDate(location.updatedAt) || getTimestampDate(location.createdAt);
-    return { priority: 0, sortTime: updatedAt?.getTime() || 0, timing: `Last updated ${formatHazardUpdatedAt(location)}` };
+    return { priority: 0, sortTime: updatedAt?.getTime() || 0, timing: `Last updated ${formatUrgentUpdatedAt(location)}` };
   }
 
   const startsAt = parseLocationDate(location.startDate, location.startTime);
@@ -156,7 +157,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
     return matchesCategory && (!normalizedSearch || searchableText.includes(normalizedSearch));
   });
   const urgentAlerts = locations
-    .filter((location) => ['Hazard', 'Outage'].includes(location.category))
+    .filter((location) => urgentCategories.includes(location.category))
     .map((location) => ({ location, ...getAlertOrder(location, currentTime) }))
     .sort((first, second) => {
       if (first.priority !== second.priority) return first.priority - second.priority;
@@ -318,7 +319,9 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   const handleAddLocation = async (event) => {
     event.preventDefault();
 
-    if (!db || !user || !canCreateMarkers || (!selectedPosition && !editingLocationId) || !formData.name.trim()) {
+    const isSchedule = selectedFormCategory === 'Schedule';
+    if (!db || !user || !canCreateMarkers || (!selectedPosition && !editingLocationId && !isSchedule)
+      || !formData.name.trim() || (isSchedule && !formData.startDate)) {
       return;
     }
 
@@ -346,7 +349,19 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
     setSaveError('');
 
     try {
-      if (editingLocationId) {
+      if (isSchedule) {
+        await addDoc(collection(db, 'Schedules'), {
+          category: 'Schedule',
+          name: locationDetails.name,
+          description: locationDetails.description,
+          startDate: formData.startDate,
+          startTime: formData.startTime,
+          endDate: formData.endDate || formData.startDate,
+          endTime: formData.endTime,
+          createdBy: user.uid,
+          createdAt: serverTimestamp(),
+        });
+      } else if (editingLocationId) {
         await updateDoc(doc(db, 'Locations', editingLocationId), locationDetails);
         setEditingLocationId(null);
         setPanelOpen(false);
@@ -677,7 +692,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                 <>
                   <label>
                     Start Date
-                    <input name="startDate" type="date" value={formData.startDate} onChange={handleInputChange} />
+                    <input name="startDate" type="date" value={formData.startDate} onChange={handleInputChange} required={selectedFormCategory === 'Schedule'} />
                   </label>
                   <label>
                     Start Time
@@ -692,6 +707,10 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                     <input name="endTime" type="time" value={formData.endTime} onChange={handleInputChange} />
                   </label>
                 </>
+              )}
+
+              {selectedFormCategory === 'Schedule' && (
+                <p className="map-feedback">Schedules appear in Updates and the calendar without a map pin.</p>
               )}
 
               <label>
@@ -734,8 +753,9 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                 </>
               )}
 
-              <button type="submit" disabled={(!selectedPosition && !editingLocationId) || !formData.name.trim() || isSaving}>
-                {isSaving ? (isAdmin ? 'Saving location…' : 'Submitting report…') : editingLocationId ? 'Save changes' : isAdmin ? 'Add Location' : 'Submit Report'}
+              <button type="submit" disabled={((selectedFormCategory !== 'Schedule' && !selectedPosition && !editingLocationId)
+                || !formData.name.trim() || (selectedFormCategory === 'Schedule' && !formData.startDate) || isSaving)}>
+                {isSaving ? (isAdmin ? 'Saving…' : 'Submitting report…') : editingLocationId ? 'Save changes' : selectedFormCategory === 'Schedule' ? 'Add Schedule' : isAdmin ? 'Add Location' : 'Submit Report'}
               </button>
               {editingLocationId && <button className="map-danger-button" type="button" onClick={handleCancelEdit}>Cancel edit</button>}
               {saveError && <p className="map-feedback map-feedback--error" role="alert">{saveError}</p>}
@@ -789,7 +809,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
             {selectedLocation.category === 'Hazard' && (
               <dl className="marker-details-facts">
                 <div><dt>Coverage radius</dt><dd>{selectedLocation.hazardRadius || defaultHazardRadius} m</dd></div>
-                <div><dt>Last updated</dt><dd>{formatHazardUpdatedAt(selectedLocation)}</dd></div>
+                <div><dt>Last updated</dt><dd>{formatUrgentUpdatedAt(selectedLocation)}</dd></div>
               </dl>
             )}
             {selectedLocation.category === 'Location' && (selectedLocation.officeHours || selectedLocation.contactInfo) && (
@@ -897,7 +917,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
             {locationsStatus === 'loading' && <p className="map-feedback" role="status">Loading alerts…</p>}
             {locationsStatus === 'error' && <p className="map-feedback map-feedback--error" role="alert">{locationsError}</p>}
             {locationsStatus === 'ready' && urgentAlerts.length === 0 && (
-              <p className="urgent-alerts-empty" role="status">No hazards or outages reported.</p>
+              <p className="urgent-alerts-empty" role="status">No urgent notices reported.</p>
             )}
             {urgentAlerts.length > 0 && (
               <ul className="urgent-alerts-list" aria-live="polite">
@@ -912,7 +932,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                         <span className="urgent-alert-meta">{timing}</span>
                       </>
                     )}
-                    {location.category === 'Outage' && <span className="urgent-alert-meta">{timing}</span>}
+                    {['Outage', 'Evacuation', 'Relief'].includes(location.category) && <span className="urgent-alert-meta">{timing}</span>}
                   </li>
                 ))}
               </ul>

@@ -21,13 +21,16 @@ function App() {
   const [locations, setLocations] = useState([])
   const [locationsStatus, setLocationsStatus] = useState(db ? 'loading' : 'unavailable')
   const [locationsError, setLocationsError] = useState('')
+  const [schedules, setSchedules] = useState([])
+  const [schedulesStatus, setSchedulesStatus] = useState(db ? 'loading' : 'unavailable')
+  const [schedulesError, setSchedulesError] = useState('')
   const [marketplaceListings, setMarketplaceListings] = useState([])
   const [marketplaceListingsStatus, setMarketplaceListingsStatus] = useState(db ? 'loading' : 'unavailable')
   const [marketplaceListingsError, setMarketplaceListingsError] = useState('')
   const [focusedMapLocation, setFocusedMapLocation] = useState(null)
   const [hazardNoticeDismissed, setHazardNoticeDismissed] = useState(false)
-  const activeHazards = locations
-    .filter((location) => location.category === 'Hazard')
+  const activeUrgentNotices = locations
+    .filter((location) => ['Hazard', 'Evacuation', 'Relief'].includes(location.category))
     .sort((first, second) => {
       const firstTime = first.updatedAt?.toMillis?.() || first.createdAt?.toMillis?.() || 0
       const secondTime = second.updatedAt?.toMillis?.() || second.createdAt?.toMillis?.() || 0
@@ -90,6 +93,23 @@ function App() {
     })
   }, [])
 
+  useEffect(() => {
+    if (!db) return undefined
+
+    return onSnapshot(collection(db, 'Schedules'), (snapshot) => {
+      setSchedules(snapshot.docs.map((scheduleDoc) => ({
+        id: scheduleDoc.id,
+        ...scheduleDoc.data(),
+        category: 'Schedule',
+      })))
+      setSchedulesStatus('ready')
+      setSchedulesError('')
+    }, () => {
+      setSchedulesStatus('error')
+      setSchedulesError('Schedules could not be loaded. Check Firestore rules and try again.')
+    })
+  }, [])
+
   return (
     <div className="app-shell">
       <Navbar
@@ -113,12 +133,14 @@ function App() {
           onRequestLogin={() => setLoginOpen(true)}
         />
       )}
-      {activeHazards.length > 0 && !hazardNoticeDismissed && (
-        <aside className="hazard-notice" aria-label="Hazard alerts" role="status">
+      {activeUrgentNotices.length > 0 && !hazardNoticeDismissed && (
+        <aside className="hazard-notice" aria-label="Urgent community notices" role="status">
           <header className="hazard-notice-header">
             <div>
               <p className="hazard-notice-eyebrow">Community safety</p>
-              <h2>{activeHazards.length === 1 ? 'Hazard reported' : `${activeHazards.length} hazards reported`}</h2>
+              <h2>{activeUrgentNotices.length === 1
+                ? `${activeUrgentNotices[0].category} notice`
+                : `${activeUrgentNotices.length} urgent notices`}</h2>
             </div>
             <button
               className="hazard-notice-close"
@@ -131,30 +153,38 @@ function App() {
             </button>
           </header>
           <ul className="hazard-notice-list">
-            {activeHazards.slice(0, 3).map((hazard) => (
-              <li key={hazard.id}>
+            {activeUrgentNotices.slice(0, 3).map((notice) => (
+              <li key={notice.id}>
                 <button
                   className="hazard-notice-item"
                   type="button"
                   onClick={() => {
-                    setFocusedMapLocation({ id: hazard.id })
+                    setFocusedMapLocation({ id: notice.id })
                     setActivePage('map')
                   }}
                 >
-                  <strong>{hazard.name}</strong>
-                  <span>{hazard.description || 'No additional safety information provided.'}</span>
-                  <small>Coverage radius: {hazard.hazardRadius || 500}m</small>
+                  <strong>{notice.category}: {notice.name}</strong>
+                  <span>{notice.description || 'No additional details provided.'}</span>
+                  {notice.category === 'Hazard' && <small>Coverage radius: {notice.hazardRadius || 500}m</small>}
                 </button>
               </li>
             ))}
           </ul>
-          {activeHazards.length > 3 && (
-            <p className="hazard-notice-more">And {activeHazards.length - 3} more. Open the map for all hazards.</p>
+          {activeUrgentNotices.length > 3 && (
+            <p className="hazard-notice-more">And {activeUrgentNotices.length - 3} more. Open the map for all urgent notices.</p>
           )}
         </aside>
       )}
       {activePage === 'updates' && (
-        <Updates locations={locations} locationsStatus={locationsStatus} locationsError={locationsError} />
+        <Updates
+          user={user}
+          locations={locations}
+          locationsStatus={locationsStatus}
+          locationsError={locationsError}
+          schedules={schedules}
+          schedulesStatus={schedulesStatus}
+          schedulesError={schedulesError}
+        />
       )}
       {activePage === 'marketplace' && (
         <Marketplace

@@ -29,7 +29,7 @@ service cloud.firestore {
         && data.name is string
         && data.name.size() > 0
         && data.name.size() <= 120
-        && data.category in ['Location', 'Outage', 'Service', 'Marketplace', 'Report', 'Hazard']
+        && data.category in ['Location', 'Outage', 'Service', 'Marketplace', 'Garden', 'Event', 'Report', 'Hazard', 'Evacuation', 'Relief']
         && data.description is string
         && data.description.size() <= 1000
         && (!data.keys().hasAny(['officeHours']) || (data.officeHours is string && data.officeHours.size() <= 500))
@@ -77,6 +77,31 @@ service cloud.firestore {
         );
     }
 
+    function validSchedule(data) {
+      return data.keys().hasAll([
+          'category', 'name', 'description', 'startDate', 'startTime', 'endDate', 'endTime', 'createdBy', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'category', 'name', 'description', 'startDate', 'startTime', 'endDate', 'endTime', 'createdBy', 'createdAt'
+        ])
+        && data.category == 'Schedule'
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 120
+        && data.description is string
+        && data.description.size() <= 1000
+        && data.startDate is string
+        && data.startDate.size() == 10
+        && data.startTime is string
+        && data.startTime.size() <= 5
+        && data.endDate is string
+        && data.endDate.size() == 10
+        && data.endTime is string
+        && data.endTime.size() <= 5
+        && data.createdBy is string
+        && data.createdAt is timestamp;
+    }
+
     match /admin/{uid} {
       allow get: if request.auth != null && request.auth.uid == uid;
       allow list, create, update, delete: if false;
@@ -106,6 +131,22 @@ service cloud.firestore {
           || request.resource.data.get('updatedAt', null) == request.time)
         && validReportStatusTransition(resource.data, request.resource.data);
       allow delete: if isAdmin();
+    }
+
+    match /Schedules/{scheduleId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && isAdmin()
+        && validSchedule(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update: if request.auth != null
+        && isAdmin()
+        && validSchedule(request.resource.data)
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if request.auth != null
+        && (isAdmin() || request.auth.uid == resource.data.createdBy);
     }
 
     function validCustomMarketplaceLocation(location) {

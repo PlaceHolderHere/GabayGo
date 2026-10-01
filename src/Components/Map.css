@@ -273,6 +273,10 @@
   border-left-color: var(--color-gold);
 }
 
+.urgent-alert-item--relief {
+  border-left-color: #287c8e;
+}
+
 .urgent-alert-category {
   color: #8b2b1f;
   font-size: 0.66rem;

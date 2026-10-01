@@ -1,4 +1,8 @@
 import L from 'leaflet'
+import gardenImage from '../assets/Garden.svg'
+import eventImage from '../assets/Event.svg'
+import evacuationImage from '../assets/Evacuation.svg'
+import reliefImage from '../assets/Relief.svg'
 import locationImage from '../assets/Location.svg'
 import outageImage from '../assets/Outage.svg'
 import serviceImage from '../assets/Service.svg'
@@ -31,6 +35,11 @@ export const categoryIcons = {
   Outage: new CustomIcon({ iconUrl: outageImage }),
   Service: new CustomIcon({ iconUrl: serviceImage }),
   Marketplace: new CustomIcon({ iconUrl: marketplaceImage }),
+  Garden: new CustomIcon({ iconUrl: gardenImage }),
+  Event: new CustomIcon({ iconUrl: eventImage }),
+  Schedule: defaultIcon,
   Report: new CustomIcon({ iconUrl: reportImage }),
   Hazard: HazardIcon,
+  Evacuation: new CustomIcon({ iconUrl: evacuationImage }),
+  Relief: new CustomIcon({ iconUrl: reliefImage }),
 }
