@@ -127,6 +127,7 @@ function App() {
       )}
       {activePage === 'home' && (
         <Home
+          user={user}
           locations={locations}
           locationsStatus={locationsStatus}
           onNavigate={setActivePage}
@@ -177,6 +178,7 @@ function App() {
       )}
       {activePage === 'updates' && (
         <Updates
+          key={user?.uid || 'signed-out'}
           user={user}
           locations={locations}
           locationsStatus={locationsStatus}

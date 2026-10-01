@@ -1,6 +1,7 @@
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
 import { BriefcaseBusiness, MessageSquareWarning, Store } from 'lucide-react'
 import BagoAplayaBorder from '../Components/BagoAplayaBorder'
+import CommunityParticipationForms from '../Components/CommunityParticipationForms'
 import { categoryIcons, defaultIcon } from '../Components/mapIcons'
 import logo from '../assets/Logo.svg'
 import 'leaflet/dist/leaflet.css'
@@ -42,7 +43,7 @@ function getLocationDate(location) {
     : 'Community update'
 }
 
-export default function Home({ locations, locationsStatus, onNavigate, onRequestLogin }) {
+export default function Home({ user, locations, locationsStatus, onNavigate, onRequestLogin }) {
   const updates = [...locations]
     .filter((location) => ['Outage', 'Service', 'Marketplace', 'Report', 'Hazard'].includes(location.category))
     .sort((first, second) => getLocationTime(second) - getLocationTime(first))
@@ -136,6 +137,10 @@ export default function Home({ locations, locationsStatus, onNavigate, onRequest
           </div>
         )}
         <button className="home-all-updates" type="button" onClick={() => onNavigate('updates')}>View all updates <span aria-hidden="true">↗</span></button>
+      </section>
+
+      <section className="home-community-section" aria-label="Community participation">
+        <CommunityParticipationForms key={user?.uid || 'signed-out'} user={user} onRequestLogin={onRequestLogin} />
       </section>
 
       <section className="home-map-feature" aria-labelledby="home-map-title">

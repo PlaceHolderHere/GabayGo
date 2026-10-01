@@ -417,6 +417,16 @@
   margin: 1.8rem auto 0;
 }
 
+.home-community-section {
+  padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 7vw, 7rem);
+  background: #dcebe7;
+}
+
+.home-community-section > .updates-community-forms {
+  width: min(100%, 1080px);
+  margin: 0 auto;
+}
+
 .home-map-feature {
   position: relative;
   display: grid;

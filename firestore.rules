@@ -102,6 +102,25 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    function validVolunteerSignup(data) {
+      return data.keys().hasAll(['userId', 'name', 'contact', 'methods', 'notes', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'name', 'contact', 'methods', 'notes', 'createdAt', 'updatedAt'])
+        && data.userId is string
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 120
+        && data.contact is string
+        && data.contact.size() > 0
+        && data.contact.size() <= 300
+        && data.methods is list
+        && data.methods.size() > 0
+        && data.methods.size() <= 7
+        && data.notes is string
+        && data.notes.size() <= 1000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
     match /admin/{uid} {
       allow get: if request.auth != null && request.auth.uid == uid;
       allow list, create, update, delete: if false;
@@ -147,6 +166,38 @@ service cloud.firestore {
         && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if request.auth != null
         && (isAdmin() || request.auth.uid == resource.data.createdBy);
+    }
+
+    match /UpdatePreferences/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['userId', 'topics', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['userId', 'topics', 'updatedAt'])
+        && request.resource.data.userId == uid
+        && request.resource.data.topics is list
+        && request.resource.data.topics.size() <= 9
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /VolunteerSignups/{uid} {
+      allow read: if request.auth != null
+        && (request.auth.uid == uid || isAdmin());
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.userId == uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && validVolunteerSignup(request.resource.data);
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.userId == uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && validVolunteerSignup(request.resource.data);
+      allow delete: if request.auth != null
+        && (request.auth.uid == uid || isAdmin());
     }
 
     function validCustomMarketplaceLocation(location) {

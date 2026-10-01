@@ -222,7 +222,6 @@ export default function Updates({ user, locations, locationsStatus, locationsErr
   const [timeFrom, setTimeFrom] = useState('')
   const [timeTo, setTimeTo] = useState('')
   const [showAllUpdates, setShowAllUpdates] = useState(false)
-
   useEffect(() => {
     const interval = window.setInterval(() => setCurrentTime(Date.now()), 60_000)
     return () => window.clearInterval(interval)
@@ -609,6 +608,7 @@ export default function Updates({ user, locations, locationsStatus, locationsErr
           </div>
         )}
       </section>
+
     </main>
   )
 }
