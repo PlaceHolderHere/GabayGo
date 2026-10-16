@@ -3,6 +3,7 @@ import { deleteDoc, doc } from 'firebase/firestore'
 import { MapContainer, Marker, TileLayer } from 'react-leaflet'
 import { db } from '../firebase'
 import BagoAplayaBorder from '../Components/BagoAplayaBorder'
+import CategoryDropdown from '../Components/CategoryDropdown'
 import { categoryIcons, defaultIcon } from '../Components/mapIcons'
 import 'leaflet/dist/leaflet.css'
 import './Updates.css'
@@ -374,23 +375,17 @@ export default function Updates({ user, locations, locationsStatus, locationsErr
               <input type="time" value={timeTo} onChange={(event) => setTimeTo(event.target.value)} />
             </label>
           </div>
-          <fieldset className="updates-category-filter">
-            <legend>Categories</legend>
-            <div>
-              {allCategories.map((category) => (
-                <label key={category}>
-                  <input
-                    type="checkbox"
-                    checked={categoryFilters.includes(category)}
-                    onChange={(event) => setCategoryFilters((selected) => event.target.checked
-                      ? [...selected, category]
-                      : selected.filter((item) => item !== category))}
-                  />
-                  <span>{category}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
+          <div className="updates-filter-field updates-category-dropdown-field">
+            <span className="updates-filter-field-label" id="updates-categories-label">Categories</span>
+            <CategoryDropdown
+              id="updates-categories-dropdown"
+              ariaLabelledBy="updates-categories-label"
+              categories={allCategories}
+              selectedCategories={categoryFilters}
+              onChange={setCategoryFilters}
+              placeholder="All categories"
+            />
+          </div>
           <button className="updates-clear-filters" type="button" onClick={clearFilters}>Clear filters</button>
         </div>
 

@@ -3,6 +3,7 @@ import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMa
 import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import BagoAplayaBorder from './BagoAplayaBorder';
+import CategoryDropdown from './CategoryDropdown';
 import { categoryIcons, defaultIcon, temporaryLocationIcon } from './mapIcons';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
@@ -604,30 +605,17 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                       placeholder="Name, category, or details"
                     />
                   </label>
-                  <fieldset className="location-category-filter">
-                    <legend>Categories</legend>
-                    <div className="location-category-options">
-                      {categories.map((category) => (
-                        <label className="location-category-option" key={category}>
-                          <input
-                            type="checkbox"
-                            checked={categoryFilters.includes(category)}
-                            onChange={(event) => {
-                              setCategoryFilters((selected) => event.target.checked
-                                ? [...selected, category]
-                                : selected.filter((selectedCategory) => selectedCategory !== category))
-                            }}
-                          />
-                          <span>{category}</span>
-                        </label>
-                      ))}
-                    </div>
-                    {categoryFilters.length > 0 && (
-                      <button className="clear-category-filters" type="button" onClick={() => setCategoryFilters([])}>
-                        Clear categories
-                      </button>
-                    )}
-                  </fieldset>
+                  <div className="location-filter-field">
+                    <span className="location-filter-field-label" id="map-category-filter-label">Categories</span>
+                    <CategoryDropdown
+                      id="map-category-filter"
+                      ariaLabelledBy="map-category-filter-label"
+                      categories={categories}
+                      selectedCategories={categoryFilters}
+                      onChange={setCategoryFilters}
+                      placeholder="All categories"
+                    />
+                  </div>
                   {locationsStatus === 'ready' && (
                     <p className="location-result-count" role="status">
                       {visibleLocations.length} of {locations.length} locations
