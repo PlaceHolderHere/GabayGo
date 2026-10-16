@@ -516,7 +516,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
         </button>
 
         {panelOpen && (
-          <aside className={`map-panel${editingLocationId ? ' map-panel--editing' : ''}`} id="map-panel" aria-label={editingLocationId ? 'Edit marker' : 'Add or search for a location'}>
+          <aside className={`map-panel${editingLocationId ? ' map-panel--editing' : ''}${activePanelTab === 'create' ? ' map-panel--create' : ''}`} id="map-panel" aria-label={editingLocationId ? 'Edit marker' : 'Add or search for a location'}>
             <div className="map-header">
               <h2>Community map</h2>
             </div>

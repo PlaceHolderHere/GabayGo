@@ -20,7 +20,7 @@
   z-index: 1010;
   inset: 1rem auto 1rem 1rem;
   width: var(--map-panel-width);
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--color-cream);
   border: 1px solid var(--color-line);
   box-shadow: 0 12px 32px color-mix(in srgb, var(--color-brown) 22%, transparent);
@@ -112,7 +112,7 @@
   margin: 0;
 }
 
-.marker-details-facts > div {
+.marker-details-facts>div {
   display: grid;
   grid-template-columns: minmax(6rem, 0.7fr) minmax(0, 1.3fr);
   gap: 0.65rem;
@@ -145,8 +145,8 @@
   gap: 0.5rem;
 }
 
-.marker-details-actions > button,
-.marker-details-admin-actions > button:not(.popup-delete-button) {
+.marker-details-actions>button,
+.marker-details-admin-actions>button:not(.popup-delete-button) {
   min-height: 2.45rem;
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--color-line);
@@ -159,13 +159,13 @@
   cursor: pointer;
 }
 
-.marker-details-actions > button:hover:not(:disabled),
-.marker-details-admin-actions > button:hover:not(:disabled) {
+.marker-details-actions>button:hover:not(:disabled),
+.marker-details-admin-actions>button:hover:not(:disabled) {
   background: var(--color-sand);
 }
 
-.marker-details-actions > button:disabled,
-.marker-details-admin-actions > button:disabled {
+.marker-details-actions>button:disabled,
+.marker-details-admin-actions>button:disabled {
   cursor: wait;
   opacity: 0.6;
 }
@@ -288,13 +288,13 @@
   color: var(--color-brown);
 }
 
-.urgent-alert-item > strong {
+.urgent-alert-item>strong {
   color: var(--color-brown);
   font-size: 0.9rem;
   overflow-wrap: anywhere;
 }
 
-.urgent-alert-item > p {
+.urgent-alert-item>p {
   margin: 0;
   color: var(--color-muted);
   font-size: 0.78rem;
@@ -358,6 +358,7 @@
 }
 
 .map-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -391,6 +392,7 @@
 }
 
 .sidebar-tabs {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
   border-bottom: 1px solid var(--color-line);
@@ -433,6 +435,29 @@
   display: grid;
   align-content: start;
   gap: 0.85rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-brown) 32%, transparent) transparent;
+}
+
+.sidebar-view::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-view::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-view::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-brown) 30%, transparent);
+  border-radius: 4px;
+}
+
+.sidebar-view::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-brown) 50%, transparent);
 }
 
 .location-filters {
@@ -442,7 +467,7 @@
   border-bottom: 1px solid var(--color-line);
 }
 
-.location-filters > label {
+.location-filters>label {
   display: grid;
   gap: 0.35rem;
   color: var(--color-brown);
@@ -450,8 +475,8 @@
   font-weight: 650;
 }
 
-.location-filters > label input,
-.location-filters > label select {
+.location-filters>label input,
+.location-filters>label select {
   width: 100%;
   min-height: 2.55rem;
   padding: 0.6rem 0.7rem;
@@ -463,13 +488,13 @@
   font-size: 0.82rem;
 }
 
-.location-filters > label input::placeholder {
+.location-filters>label input::placeholder {
   color: var(--color-muted);
   opacity: 0.8;
 }
 
-.location-filters > label input:focus,
-.location-filters > label select:focus {
+.location-filters>label input:focus,
+.location-filters>label select:focus {
   border-color: var(--color-gold);
   outline: 2px solid color-mix(in srgb, var(--color-gold) 35%, transparent);
   outline-offset: 1px;
