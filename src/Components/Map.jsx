@@ -143,7 +143,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
       ? 'signed-out'
       : isDemoAdmin
         ? 'admin'
-      : adminCheck.uid === user.uid ? adminCheck.status : 'checking';
+        : adminCheck.uid === user.uid ? adminCheck.status : 'checking';
   const userId = user?.uid;
   const isAdmin = adminStatus === 'admin';
   const canCreateReports = Boolean(db && user);
@@ -512,17 +512,13 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
             if (window.innerWidth <= 860) setNotificationsOpen(false);
           }}
         >
-          <span aria-hidden="true">{panelOpen ? '×' : '›'}</span>
+          <span aria-hidden="true">{panelOpen ? '‹' : '›'}</span>
         </button>
 
         {panelOpen && (
           <aside className={`map-panel${editingLocationId ? ' map-panel--editing' : ''}`} id="map-panel" aria-label={editingLocationId ? 'Edit marker' : 'Add or search for a location'}>
             <div className="map-header">
-              <div>
-                <p className="map-eyebrow">Community map</p>
-                <h2>Community map</h2>
-                <p>Find places or add a location.</p>
-              </div>
+              <h2>Community map</h2>
             </div>
 
             <div className="sidebar-tabs" role="group" aria-label="Map sidebar views">
@@ -545,225 +541,225 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
             </div>
 
             <div className="sidebar-view" aria-label={activePanelTab === 'search' ? 'Search locations' : 'Create a location'}>
-            {activePanelTab === 'search' && (
-              <>
-                {routeState && (
-                  <section className="route-panel" aria-label="Driving directions">
-                    <div className="route-panel-header">
-                      <h3>Driving directions</h3>
-                      <button className="map-danger-button" type="button" onClick={() => setRouteState(null)}>Cancel</button>
+              {activePanelTab === 'search' && (
+                <>
+                  {routeState && (
+                    <section className="route-panel" aria-label="Driving directions">
+                      <div className="route-panel-header">
+                        <h3>Driving directions</h3>
+                        <button className="map-danger-button" type="button" onClick={() => setRouteState(null)}>Cancel</button>
+                      </div>
+                      <p className="route-endpoint"><strong>From</strong> {routeState.origin?.name || 'Your location'}</p>
+                      {routeState.destination && (
+                        <p className="route-endpoint"><strong>To</strong> {routeState.destination.name}</p>
+                      )}
+                      {routeState.status === 'locating' && (
+                        <p className="map-feedback" role="status">Finding your current location…</p>
+                      )}
+                      {routeState.status === 'selecting' && (
+                        <p className="map-feedback" role="status">Click the map to choose your destination.</p>
+                      )}
+                      {routeState.status === 'loading' && (
+                        <p className="map-feedback" role="status">Finding a driving route…</p>
+                      )}
+                      {routeState.status === 'error' && (
+                        <p className="map-feedback map-feedback--error" role="alert">{routeState.error}</p>
+                      )}
+                      {routeState.status === 'ready' && (
+                        <>
+                          <p className="route-summary" role="status">
+                            {formatRouteDistance(routeState.distance)} · {formatRouteDuration(routeState.duration)}
+                          </p>
+                          <ol className="route-steps">
+                            {routeState.steps.map((step, index) => (
+                              <li key={`${step.instruction}-${index}`}>
+                                <span>{step.instruction}</span>
+                                <small>{formatRouteDistance(step.distance)}</small>
+                              </li>
+                            ))}
+                          </ol>
+                        </>
+                      )}
+                    </section>
+                  )}
+                  {!routeState && (
+                    <button
+                      className="route-start-button"
+                      type="button"
+                      onClick={() => handleStartRouteFromCurrentLocation()}
+                    >
+                      Directions from my location
+                    </button>
+                  )}
+                  <section className="location-filters" aria-label="Search and filter locations">
+                    <label>
+                      Search locations
+                      <input
+                        type="search"
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        placeholder="Name, category, or details"
+                      />
+                    </label>
+                    <div className="location-filter-field">
+                      <span className="location-filter-field-label" id="map-category-filter-label">Categories</span>
+                      <CategoryDropdown
+                        id="map-category-filter"
+                        ariaLabelledBy="map-category-filter-label"
+                        categories={categories}
+                        selectedCategories={categoryFilters}
+                        onChange={setCategoryFilters}
+                        placeholder="All categories"
+                      />
                     </div>
-                    <p className="route-endpoint"><strong>From</strong> {routeState.origin?.name || 'Your location'}</p>
-                    {routeState.destination && (
-                      <p className="route-endpoint"><strong>To</strong> {routeState.destination.name}</p>
-                    )}
-                    {routeState.status === 'locating' && (
-                      <p className="map-feedback" role="status">Finding your current location…</p>
-                    )}
-                    {routeState.status === 'selecting' && (
-                      <p className="map-feedback" role="status">Click the map to choose your destination.</p>
-                    )}
-                    {routeState.status === 'loading' && (
-                      <p className="map-feedback" role="status">Finding a driving route…</p>
-                    )}
-                    {routeState.status === 'error' && (
-                      <p className="map-feedback map-feedback--error" role="alert">{routeState.error}</p>
-                    )}
-                    {routeState.status === 'ready' && (
-                      <>
-                        <p className="route-summary" role="status">
-                          {formatRouteDistance(routeState.distance)} · {formatRouteDuration(routeState.duration)}
-                        </p>
-                        <ol className="route-steps">
-                          {routeState.steps.map((step, index) => (
-                            <li key={`${step.instruction}-${index}`}>
-                              <span>{step.instruction}</span>
-                              <small>{formatRouteDistance(step.distance)}</small>
-                            </li>
-                          ))}
-                        </ol>
-                      </>
+                    {locationsStatus === 'ready' && (
+                      <p className="location-result-count" role="status">
+                        {visibleLocations.length} of {locations.length} locations
+                      </p>
                     )}
                   </section>
-                )}
-                {!routeState && (
-                  <button
-                    className="route-start-button"
-                    type="button"
-                    onClick={() => handleStartRouteFromCurrentLocation()}
-                  >
-                    Directions from my location
-                  </button>
-                )}
-                <section className="location-filters" aria-label="Search and filter locations">
-                  <label>
-                    Search locations
-                    <input
-                      type="search"
-                      value={searchQuery}
-                      onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder="Name, category, or details"
-                    />
-                  </label>
-                  <div className="location-filter-field">
-                    <span className="location-filter-field-label" id="map-category-filter-label">Categories</span>
-                    <CategoryDropdown
-                      id="map-category-filter"
-                      ariaLabelledBy="map-category-filter-label"
-                      categories={categories}
-                      selectedCategories={categoryFilters}
-                      onChange={setCategoryFilters}
-                      placeholder="All categories"
-                    />
-                  </div>
-                  {locationsStatus === 'ready' && (
-                    <p className="location-result-count" role="status">
-                      {visibleLocations.length} of {locations.length} locations
-                    </p>
+                  {locationsStatus === 'loading' && <p className="map-feedback" role="status">Loading locations…</p>}
+                  {locationsStatus === 'error' && <p className="map-feedback map-feedback--error" role="alert">{locationsError}</p>}
+                  {locationsStatus === 'ready' && locations.length === 0 && (
+                    <p className="map-feedback" role="status">No locations have been added yet.</p>
                   )}
-                </section>
-                {locationsStatus === 'loading' && <p className="map-feedback" role="status">Loading locations…</p>}
-                {locationsStatus === 'error' && <p className="map-feedback map-feedback--error" role="alert">{locationsError}</p>}
-                {locationsStatus === 'ready' && locations.length === 0 && (
-                  <p className="map-feedback" role="status">No locations have been added yet.</p>
-                )}
-                {locationsStatus === 'ready' && locations.length > 0 && visibleLocations.length === 0 && (
-                  <p className="map-feedback" role="status">No locations match those filters.</p>
-                )}
-              </>
-            )}
-
-            {activePanelTab === 'create' && (
-            <>
-              {canCreateMarkers ? (
-              <form className="add-location-form" onSubmit={handleAddLocation}>
-              <h3>{editingLocationId ? 'Edit marker' : 'Add a location'}</h3>
-              {!isAdmin && <p className="report-access-note">You can submit a report. Other location types are reserved for admins.</p>}
-              <label>
-                Name
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="e.g. Riverside Library"
-                />
-              </label>
-
-              <label>
-                Category
-                <select name="category" value={selectedFormCategory} onChange={handleInputChange} disabled={!isAdmin || Boolean(editingLocationId)}>
-                  {availableCategories.map((category) => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </label>
-
-              {selectedFormCategory === 'Hazard' && (
-                <label>
-                  Coverage radius (meters)
-                  <input
-                    name="hazardRadius"
-                    type="number"
-                    min="50"
-                    max="50000"
-                    step="any"
-                    required
-                    value={formData.hazardRadius}
-                    onChange={handleInputChange}
-                  />
-                </label>
-              )}
-
-              {(timeSensitiveCategories.includes(selectedFormCategory)
-                || (editingLocationId && timeStampedCategories.includes(selectedFormCategory))) && (
-                <>
-                  <label>
-                    Start Date
-                    <input name="startDate" type="date" value={formData.startDate} onChange={handleInputChange} required={selectedFormCategory === 'Schedule'} />
-                  </label>
-                  <label>
-                    Start Time
-                    <input name="startTime" type="time" value={formData.startTime} onChange={handleInputChange} />
-                  </label>
-                  <label>
-                    End Date
-                    <input name="endDate" type="date" value={formData.endDate} onChange={handleInputChange} />
-                  </label>
-                  <label>
-                    End Time
-                    <input name="endTime" type="time" value={formData.endTime} onChange={handleInputChange} />
-                  </label>
+                  {locationsStatus === 'ready' && locations.length > 0 && visibleLocations.length === 0 && (
+                    <p className="map-feedback" role="status">No locations match those filters.</p>
+                  )}
                 </>
               )}
 
-              {selectedFormCategory === 'Schedule' && (
-                <p className="map-feedback">Schedules appear in Updates and the calendar without a map pin.</p>
-              )}
-
-              <label>
-                {selectedFormCategory === 'Hazard' ? 'Warning and instructions' : 'Description'}
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows="3"
-                  placeholder={selectedFormCategory === 'Hazard'
-                    ? 'Describe the hazard and what people should do'
-                    : 'Short description'}
-                />
-              </label>
-
-              {selectedFormCategory === 'Location' && (
+              {activePanelTab === 'create' && (
                 <>
-                  <label>
-                    Office hours
-                    <textarea
-                      name="officeHours"
-                      value={formData.officeHours}
-                      onChange={handleInputChange}
-                      rows="2"
-                      maxLength="500"
-                      placeholder="e.g. Mon-Fri, 8:00 AM-5:00 PM"
-                    />
-                  </label>
-                  <label>
-                    Contact information
-                    <input
-                      type="text"
-                      name="contactInfo"
-                      value={formData.contactInfo}
-                      onChange={handleInputChange}
-                      maxLength="500"
-                      placeholder="Phone, email, or website"
-                    />
-                  </label>
+                  {canCreateMarkers ? (
+                    <form className="add-location-form" onSubmit={handleAddLocation}>
+                      <h3>{editingLocationId ? 'Edit marker' : 'Add a location'}</h3>
+                      {!isAdmin && <p className="report-access-note">You can submit a report. Other location types are reserved for admins.</p>}
+                      <label>
+                        Name
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          placeholder="e.g. Riverside Library"
+                        />
+                      </label>
+
+                      <label>
+                        Category
+                        <select name="category" value={selectedFormCategory} onChange={handleInputChange} disabled={!isAdmin || Boolean(editingLocationId)}>
+                          {availableCategories.map((category) => (
+                            <option key={category} value={category}>{category}</option>
+                          ))}
+                        </select>
+                      </label>
+
+                      {selectedFormCategory === 'Hazard' && (
+                        <label>
+                          Coverage radius (meters)
+                          <input
+                            name="hazardRadius"
+                            type="number"
+                            min="50"
+                            max="50000"
+                            step="any"
+                            required
+                            value={formData.hazardRadius}
+                            onChange={handleInputChange}
+                          />
+                        </label>
+                      )}
+
+                      {(timeSensitiveCategories.includes(selectedFormCategory)
+                        || (editingLocationId && timeStampedCategories.includes(selectedFormCategory))) && (
+                          <>
+                            <label>
+                              Start Date
+                              <input name="startDate" type="date" value={formData.startDate} onChange={handleInputChange} required={selectedFormCategory === 'Schedule'} />
+                            </label>
+                            <label>
+                              Start Time
+                              <input name="startTime" type="time" value={formData.startTime} onChange={handleInputChange} />
+                            </label>
+                            <label>
+                              End Date
+                              <input name="endDate" type="date" value={formData.endDate} onChange={handleInputChange} />
+                            </label>
+                            <label>
+                              End Time
+                              <input name="endTime" type="time" value={formData.endTime} onChange={handleInputChange} />
+                            </label>
+                          </>
+                        )}
+
+                      {selectedFormCategory === 'Schedule' && (
+                        <p className="map-feedback">Schedules appear in Updates and the calendar without a map pin.</p>
+                      )}
+
+                      <label>
+                        {selectedFormCategory === 'Hazard' ? 'Warning and instructions' : 'Description'}
+                        <textarea
+                          name="description"
+                          value={formData.description}
+                          onChange={handleInputChange}
+                          rows="3"
+                          placeholder={selectedFormCategory === 'Hazard'
+                            ? 'Describe the hazard and what people should do'
+                            : 'Short description'}
+                        />
+                      </label>
+
+                      {selectedFormCategory === 'Location' && (
+                        <>
+                          <label>
+                            Office hours
+                            <textarea
+                              name="officeHours"
+                              value={formData.officeHours}
+                              onChange={handleInputChange}
+                              rows="2"
+                              maxLength="500"
+                              placeholder="e.g. Mon-Fri, 8:00 AM-5:00 PM"
+                            />
+                          </label>
+                          <label>
+                            Contact information
+                            <input
+                              type="text"
+                              name="contactInfo"
+                              value={formData.contactInfo}
+                              onChange={handleInputChange}
+                              maxLength="500"
+                              placeholder="Phone, email, or website"
+                            />
+                          </label>
+                        </>
+                      )}
+
+                      <button type="submit" disabled={((selectedFormCategory !== 'Schedule' && !selectedPosition && !editingLocationId)
+                        || !formData.name.trim() || (selectedFormCategory === 'Schedule' && !formData.startDate) || isSaving)}>
+                        {isSaving ? (isAdmin ? 'Saving…' : 'Submitting report…') : editingLocationId ? 'Save changes' : selectedFormCategory === 'Schedule' ? 'Add Schedule' : isAdmin ? 'Add Location' : 'Submit Report'}
+                      </button>
+                      {editingLocationId && <button className="map-danger-button" type="button" onClick={handleCancelEdit}>Cancel edit</button>}
+                      {saveError && <p className="map-feedback map-feedback--error" role="alert">{saveError}</p>}
+                    </form>
+                  ) : (
+                    <div className="map-access-message" role="status">
+                      {adminStatus === 'signed-out' && (
+                        <>
+                          <p>Sign in to request access to add community locations.</p>
+                          <button type="button" onClick={onRequestLogin}>Log in</button>
+                        </>
+                      )}
+                      {adminStatus === 'checking' && <p>Checking location editor access…</p>}
+                      {adminStatus === 'not-admin' && <p>Your account can view locations. An admin account is required to add or edit places.</p>}
+                      {adminStatus === 'error' && <p>Admin access could not be verified. Check the Firestore rules and try again.</p>}
+                      {adminStatus === 'unavailable' && <p>Firestore is not configured. Add Firebase project settings to enable shared locations.</p>}
+                    </div>
+                  )}
                 </>
               )}
-
-              <button type="submit" disabled={((selectedFormCategory !== 'Schedule' && !selectedPosition && !editingLocationId)
-                || !formData.name.trim() || (selectedFormCategory === 'Schedule' && !formData.startDate) || isSaving)}>
-                {isSaving ? (isAdmin ? 'Saving…' : 'Submitting report…') : editingLocationId ? 'Save changes' : selectedFormCategory === 'Schedule' ? 'Add Schedule' : isAdmin ? 'Add Location' : 'Submit Report'}
-              </button>
-              {editingLocationId && <button className="map-danger-button" type="button" onClick={handleCancelEdit}>Cancel edit</button>}
-              {saveError && <p className="map-feedback map-feedback--error" role="alert">{saveError}</p>}
-            </form>
-            ) : (
-              <div className="map-access-message" role="status">
-                {adminStatus === 'signed-out' && (
-                  <>
-                    <p>Sign in to request access to add community locations.</p>
-                    <button type="button" onClick={onRequestLogin}>Log in</button>
-                  </>
-                )}
-                {adminStatus === 'checking' && <p>Checking location editor access…</p>}
-                {adminStatus === 'not-admin' && <p>Your account can view locations. An admin account is required to add or edit places.</p>}
-                {adminStatus === 'error' && <p>Admin access could not be verified. Check the Firestore rules and try again.</p>}
-                {adminStatus === 'unavailable' && <p>Firestore is not configured. Add Firebase project settings to enable shared locations.</p>}
-              </div>
-              )}
-            </>
-            )}
             </div>
           </aside>
         )}
