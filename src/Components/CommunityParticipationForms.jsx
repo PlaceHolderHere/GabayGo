@@ -121,8 +121,8 @@ export default function CommunityParticipationForms({ user, onRequestLogin }) {
     <section className="updates-community-forms" aria-labelledby="updates-community-title">
       <header className="updates-community-header">
         <div>
-          <p className="updates-eyebrow">Community participation</p>
-          <h2 id="updates-community-title">Stay informed and get involved</h2>
+          <h2 id="updates-community-title">Community participation</h2>
+          <p className="updates-eyebrow">Stay informed and get involved</p>
         </div>
       </header>
       <div className="updates-community-grid">

@@ -31,15 +31,6 @@
   z-index: 1;
 }
 
-.home-kicker {
-  margin: 0 0 0.9rem;
-  color: color-mix(in srgb, var(--color-brown) 72%, #e5ac31);
-  font-size: 0.7rem;
-  font-weight: 750;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
 .home-hero h1 {
   max-width: 630px;
   margin: 0;
@@ -308,7 +299,7 @@
   font-weight: 500;
 }
 
-.home-resources-heading > p:last-child {
+.home-resources-heading>p:last-child {
   max-width: 66ch;
   margin: 0.65rem 0 0;
   color: var(--color-muted);
@@ -374,14 +365,14 @@
 }
 
 .home-contact-number:hover,
-.home-official-service-heading > a:hover,
+.home-official-service-heading>a:hover,
 .home-service-links a:hover {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .home-contact-item p,
-.home-official-service > p {
+.home-official-service>p {
   margin: 0.25rem 0 0;
   color: var(--color-muted);
   font-size: 0.72rem;
@@ -409,14 +400,14 @@
   gap: 0.4rem 0.75rem;
 }
 
-.home-official-service-heading > a {
+.home-official-service-heading>a {
   color: #276856;
   font-size: 0.75rem;
   font-weight: 700;
   text-decoration: none;
 }
 
-.home-official-service > .home-service-hours {
+.home-official-service>.home-service-hours {
   margin-top: 0.45rem;
 }
 
@@ -579,7 +570,7 @@
   background: #dcebe7;
 }
 
-.home-community-section > .updates-community-forms {
+.home-community-section>.updates-community-forms {
   width: min(100%, 1080px);
   margin: 0 auto;
 }
@@ -663,7 +654,7 @@
   text-underline-offset: 5px;
 }
 
-.home-map-copy > p:not(.home-kicker) {
+.home-map-copy>p:not(.home-kicker) {
   max-width: 370px;
   margin: 1.2rem 0 1.6rem;
   color: rgb(252 249 234 / 88%);
@@ -681,13 +672,27 @@
 }
 
 @keyframes home-rise-in {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes home-mark-arrive {
-  from { opacity: 0; transform: scale(0.94); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (max-width: 760px) {
@@ -779,7 +784,7 @@
     text-align: left;
   }
 
-  .home-service-card > img {
+  .home-service-card>img {
     grid-row: 1 / span 2;
   }
 
@@ -818,6 +823,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .home-hero-mark,
   .home-service-card {
     animation: none;

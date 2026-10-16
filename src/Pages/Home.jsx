@@ -58,7 +58,6 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
     <main className="home-page">
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
-          <p className="home-kicker">Your neighborhood, connected</p>
           <h1 id="home-title">
             <span>Gabay</span> ang<br />
             kailangan?<br />
@@ -110,7 +109,6 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
 
       <section className="home-resources" aria-labelledby="home-resources-title">
         <header className="home-resources-heading">
-          <p className="home-kicker">Official directory</p>
           <h2 id="home-resources-title">Emergency resources <em>&amp; services</em></h2>
           <p>Contact details and service information sourced from Davao City and local agencies. Please confirm availability before visiting.</p>
         </header>
@@ -160,7 +158,6 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
       <section className="home-updates" aria-labelledby="home-updates-title">
         <header className="home-section-heading home-section-heading--updates">
           <div>
-            <p className="home-kicker">What neighbors should know</p>
             <h2 id="home-updates-title"><strong>Gabay</strong> <em>Updates</em></h2>
           </div>
           <button className="home-section-link" type="button" onClick={() => onNavigate('updates')} aria-label="See all updates">
