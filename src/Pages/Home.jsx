@@ -4,7 +4,6 @@ import BagoAplayaBorder from '../Components/BagoAplayaBorder'
 import CommunityParticipationForms from '../Components/CommunityParticipationForms'
 import { categoryIcons, defaultIcon } from '../Components/mapIcons'
 import { officialContacts, officialServices } from '../data/officialResources'
-import logo from '../assets/Logo.svg'
 import 'leaflet/dist/leaflet.css'
 import './Home.css'
 
@@ -72,9 +71,26 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
             <button className="home-text-action" type="button" onClick={onRequestLogin}>Join the community</button>
           </div>
         </div>
-        <div className="home-hero-mark" aria-label="GabayGo">
-          <img src={logo} alt="GabayGo" />
-          <span className="home-sunburst" aria-hidden="true" />
+        <div className="home-hero-map" aria-label="Bago Aplaya map preview">
+          <div className="home-hero-map-frame">
+            <MapContainer center={[7.0435, 125.5315]} zoom={14} scrollWheelZoom={false} dragging={false} className="home-hero-map-preview">
+              <TileLayer
+                attribution='&copy; OpenStreetMap contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <BagoAplayaBorder />
+              {locations.slice(0, 18).map((location) => (
+                <Marker
+                  key={location.id}
+                  position={[location.lat, location.lng]}
+                  icon={categoryIcons[location.category] || defaultIcon}
+                >
+                  <Popup>{location.name}</Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+            <span className="home-hero-map-label">Bago Aplaya · Davao</span>
+          </div>
         </div>
         <span className="home-hero-coordinate" aria-hidden="true">BAGO APLAYA · DAVAO CITY</span>
       </section>
@@ -192,36 +208,6 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
 
       <section className="home-community-section" aria-label="Community participation">
         <CommunityParticipationForms key={user?.uid || 'signed-out'} user={user} onRequestLogin={onRequestLogin} />
-      </section>
-
-      <section className="home-map-feature" aria-labelledby="home-map-title">
-        <div className="home-map-frame">
-          <MapContainer center={[7.0435, 125.5315]} zoom={14} scrollWheelZoom={false} dragging={false} className="home-map-preview">
-            <TileLayer
-              attribution='&copy; OpenStreetMap contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <BagoAplayaBorder />
-            {locations.slice(0, 18).map((location) => (
-              <Marker
-                key={location.id}
-                position={[location.lat, location.lng]}
-                icon={categoryIcons[location.category] || defaultIcon}
-              >
-                <Popup>{location.name}</Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-          <span className="home-map-label">Bago Aplaya · Davao</span>
-        </div>
-        <div className="home-map-copy">
-          <p className="home-kicker">Find your way around</p>
-          <h2 id="home-map-title">Check out nearby <em>landmarks</em> using <span>Maps</span></h2>
-          <p>Filter pins and legends to see services, stores, reports, events, and other points of interest.</p>
-          <button className="home-map-action" type="button" onClick={() => onNavigate('map')}>
-            Open the neighborhood map <span aria-hidden="true">↗</span>
-          </button>
-        </div>
       </section>
     </main>
   )
