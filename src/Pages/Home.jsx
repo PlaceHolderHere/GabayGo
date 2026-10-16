@@ -92,15 +92,11 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
             <span className="home-hero-map-label">Bago Aplaya · Davao</span>
           </div>
         </div>
-        <span className="home-hero-coordinate" aria-hidden="true">BAGO APLAYA · DAVAO CITY</span>
       </section>
 
       <section className="home-services" aria-labelledby="home-services-title">
         <header className="home-section-heading">
           <h2 id="home-services-title"><strong>Gabay</strong> <em>Services</em></h2>
-          <button className="home-section-link" type="button" onClick={() => onNavigate('map')} aria-label="Explore all services on the map">
-            <span aria-hidden="true">↗</span>
-          </button>
         </header>
         <div className="home-service-grid">
           {services.map((service, index) => {
@@ -111,12 +107,10 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
                 type="button"
                 key={service.title}
                 onClick={() => onNavigate(service.page)}
-                style={{ '--card-order': index }}
               >
                 <Icon className="home-service-icon" size={56} strokeWidth={2.5} aria-hidden="true" />
                 <span className="home-service-title">{service.title}</span>
                 <span className="home-service-description">{service.description}</span>
-                <span className="home-service-arrow" aria-hidden="true">↗</span>
               </button>
             )
           })}
@@ -176,9 +170,7 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
           <div>
             <h2 id="home-updates-title"><strong>Gabay</strong> <em>Updates</em></h2>
           </div>
-          <button className="home-section-link" type="button" onClick={() => onNavigate('updates')} aria-label="See all updates">
-            <span aria-hidden="true">↗</span>
-          </button>
+
         </header>
         {updates.length ? (
           <div className="home-update-grid">
