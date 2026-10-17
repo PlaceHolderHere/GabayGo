@@ -38,18 +38,10 @@
   line-height: 1.2;
 }
 
-.chat-header > div > p:last-child {
+.chat-header>div>p:last-child {
   margin: 0.3rem 0 0;
   color: var(--color-muted);
   font-size: 0.8rem;
-}
-
-.chat-model-label {
-  padding: 0.4rem 0.6rem;
-  border: 1px solid var(--color-line);
-  color: var(--color-brown);
-  font-size: 0.72rem;
-  font-weight: 650;
 }
 
 .chat-conversation {

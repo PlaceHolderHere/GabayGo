@@ -116,11 +116,7 @@ export default function Chat({ locations, locationsStatus, locationsError, hidde
   return (
     <main className="chat-page" hidden={hidden} aria-labelledby="chat-title">
       <header className="chat-header">
-        <div>
-          <h1 id="chat-title">GabayGo Assistant</h1>
-          <p>GabayGo topics only</p>
-        </div>
-        <span className="chat-model-label">Gemini</span>
+        <h1 id="chat-title">GabayGo Assistant</h1>
       </header>
 
       <section className="chat-conversation" aria-label="Conversation">
