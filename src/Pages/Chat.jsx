@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Send } from 'lucide-react'
 import { GoogleGenAI } from '@google/genai'
 import './Chat.css'
 
@@ -155,14 +156,20 @@ export default function Chat({ locations, locationsStatus, locationsError, hidde
                 handleSubmit(event)
               }
             }}
-            placeholder="Ask about a place or what's happening…"
-            rows="2"
+            placeholder="Ask Gabaygo"
+            rows="1"
             maxLength="1000"
             disabled={isSending}
           />
           <div className="chat-composer-footer">
-            <button type="submit" disabled={isSending || !draft.trim()}>
-              {isSending ? 'Sending…' : 'Send'}
+            <button
+              type="submit"
+              className="chat-send-btn"
+              disabled={isSending || !draft.trim()}
+              aria-label={isSending ? 'Sending message…' : 'Send'}
+              title="Send"
+            >
+              <Send size={18} />
             </button>
           </div>
         </form>
