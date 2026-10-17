@@ -107,7 +107,7 @@ function FocusLocation({ location }) {
   return null;
 }
 
-export default function Map({ user, demoMode, locations, locationsStatus, locationsError, onRequestLogin, focusedMapLocation }) {
+export default function Map({ user, demoMode, locations, locationsStatus, locationsError, onRequestLogin, focusedMapLocation, onNavigate }) {
   const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' });
   const [saveError, setSaveError] = useState('');
   const [deleteFeedback, setDeleteFeedback] = useState({ locationId: null, status: '', error: '' });
@@ -115,7 +115,6 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   const [isSaving, setIsSaving] = useState(false);
   const [editingLocationId, setEditingLocationId] = useState(null);
   const [panelOpen, setPanelOpen] = useState(() => !focusedMapLocation);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [activePanelTab, setActivePanelTab] = useState('search');
   const [searchQuery, setSearchQuery] = useState('');
@@ -123,6 +122,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   const [selectedPosition, setSelectedPosition] = useState(null);
   const [selectedHazardId, setSelectedHazardId] = useState(null);
   const [selectedLocationId, setSelectedLocationId] = useState(focusedMapLocation?.id || null);
+  const [targetFocusLocation, setTargetFocusLocation] = useState(null);
   const [routeState, setRouteState] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -157,14 +157,6 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
     const searchableText = `${location.name} ${location.category} ${location.description}`.toLocaleLowerCase();
     return matchesCategory && (!normalizedSearch || searchableText.includes(normalizedSearch));
   });
-  const urgentAlerts = locations
-    .filter((location) => urgentCategories.includes(location.category))
-    .map((location) => ({ location, ...getAlertOrder(location, currentTime) }))
-    .sort((first, second) => {
-      if (first.priority !== second.priority) return first.priority - second.priority;
-      if (first.priority === 0 || first.priority === 4) return second.sortTime - first.sortTime;
-      return first.sortTime - second.sortTime;
-    });
 
   useEffect(() => {
     const refreshCurrentTime = () => setCurrentTime(Date.now());
@@ -509,7 +501,6 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
           aria-label={panelOpen ? 'Hide map tools' : 'Show map tools'}
           onClick={() => {
             setPanelOpen((isOpen) => !isOpen);
-            if (window.innerWidth <= 860) setNotificationsOpen(false);
           }}
         >
           <span aria-hidden="true">{panelOpen ? '‹' : '›'}</span>
@@ -863,73 +854,12 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
           </aside>
         )}
 
-        <button
-          className="notifications-toggle"
-          type="button"
-          onClick={() => {
-            setNotificationsOpen((isOpen) => !isOpen);
-            if (!notificationsOpen && window.innerWidth <= 860) setPanelOpen(false);
-          }}
-          aria-expanded={notificationsOpen}
-          aria-controls="urgent-alerts-panel"
-          aria-label={notificationsOpen
-            ? 'Close urgent alerts'
-            : `Urgent alerts${urgentAlerts.length ? `, ${urgentAlerts.length} active` : ''}`}
-          title="Urgent alerts"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            {notificationsOpen
-              ? <path d="m6 6 12 12M18 6 6 18" />
-              : <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />}
-          </svg>
-          {urgentAlerts.length > 0 && (
-            <span className="notifications-count" aria-hidden="true">
-              {urgentAlerts.length > 99 ? '99+' : urgentAlerts.length}
-            </span>
-          )}
-        </button>
-
-        {notificationsOpen && (
-          <aside className="urgent-alerts-panel" id="urgent-alerts-panel" aria-label="Urgent alerts">
-            <header className="urgent-alerts-header">
-              <div>
-                <p className="map-eyebrow">Live updates</p>
-                <h2>Urgent alerts</h2>
-              </div>
-            </header>
-
-            {locationsStatus === 'loading' && <p className="map-feedback" role="status">Loading alerts…</p>}
-            {locationsStatus === 'error' && <p className="map-feedback map-feedback--error" role="alert">{locationsError}</p>}
-            {locationsStatus === 'ready' && urgentAlerts.length === 0 && (
-              <p className="urgent-alerts-empty" role="status">No urgent notices reported.</p>
-            )}
-            {urgentAlerts.length > 0 && (
-              <ul className="urgent-alerts-list" aria-live="polite">
-                {urgentAlerts.map(({ location, timing }) => (
-                  <li className={`urgent-alert-item urgent-alert-item--${location.category.toLowerCase()}`} key={location.id}>
-                    <span className="urgent-alert-category">{location.category}</span>
-                    <strong>{location.name}</strong>
-                    <p>{location.description || 'No additional details provided.'}</p>
-                    {location.category === 'Hazard' && (
-                      <>
-                        <span className="urgent-alert-meta">Coverage radius: {location.hazardRadius || defaultHazardRadius} m</span>
-                        <span className="urgent-alert-meta">{timing}</span>
-                      </>
-                    )}
-                    {['Outage', 'Evacuation', 'Relief'].includes(location.category) && <span className="urgent-alert-meta">{timing}</span>}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </aside>
-        )}
-
         <div className="map-container">
           <MapContainer center={[7.0435, 125.5315]} zoom={16.5} scrollWheelZoom className="leaflet-map">
             <FocusLocation
-              location={focusedMapLocation?.id
+              location={targetFocusLocation || (focusedMapLocation?.id
                 ? locations.find((location) => location.id === focusedMapLocation.id)
-                : focusedMapLocation}
+                : focusedMapLocation)}
             />
             <TileLayer
               attribution='&copy; OpenStreetMap contributors'
@@ -1026,7 +956,6 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                     setSelectedLocationId(location.id);
                     setSelectedHazardId(location.category === 'Hazard' ? location.id : null);
                     setPanelOpen(false);
-                    setNotificationsOpen(false);
                     setRouteState(null);
                   },
                 }}

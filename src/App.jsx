@@ -11,6 +11,7 @@ import Marketplace from './Pages/Marketplace'
 import Home from './Pages/Home'
 import Login from './Pages/Login'
 import Chat from './Pages/Chat'
+import UrgentNotifications from './Components/UrgentNotifications'
 import { listenForForegroundMessages } from './notifications'
 
 function App() {
@@ -30,14 +31,6 @@ function App() {
   const [marketplaceListingsStatus, setMarketplaceListingsStatus] = useState(db ? 'loading' : 'unavailable')
   const [marketplaceListingsError, setMarketplaceListingsError] = useState('')
   const [focusedMapLocation, setFocusedMapLocation] = useState(null)
-  const [hazardNoticeDismissed, setHazardNoticeDismissed] = useState(false)
-  const activeUrgentNotices = locations
-    .filter((location) => ['Hazard', 'Evacuation', 'Relief'].includes(location.category))
-    .sort((first, second) => {
-      const firstTime = first.updatedAt?.toMillis?.() || first.createdAt?.toMillis?.() || 0
-      const secondTime = second.updatedAt?.toMillis?.() || second.createdAt?.toMillis?.() || 0
-      return secondTime - firstTime
-    })
 
   useEffect(() => {
     if (!auth) return undefined
@@ -150,48 +143,6 @@ function App() {
           onRequestLogin={() => setLoginOpen(true)}
         />
       )}
-      {activeUrgentNotices.length > 0 && !hazardNoticeDismissed && (
-        <aside className="hazard-notice" aria-label="Urgent community notices" role="status">
-          <header className="hazard-notice-header">
-            <div>
-              <p className="hazard-notice-eyebrow">Community safety</p>
-              <h2>{activeUrgentNotices.length === 1
-                ? `${activeUrgentNotices[0].category} notice`
-                : `${activeUrgentNotices.length} urgent notices`}</h2>
-            </div>
-            <button
-              className="hazard-notice-close"
-              type="button"
-              onClick={() => setHazardNoticeDismissed(true)}
-              aria-label="Dismiss hazard alerts until next app visit"
-              title="Dismiss until next app visit"
-            >
-              ×
-            </button>
-          </header>
-          <ul className="hazard-notice-list">
-            {activeUrgentNotices.slice(0, 3).map((notice) => (
-              <li key={notice.id}>
-                <button
-                  className="hazard-notice-item"
-                  type="button"
-                  onClick={() => {
-                    setFocusedMapLocation({ id: notice.id })
-                    setActivePage('map')
-                  }}
-                >
-                  <strong>{notice.category}: {notice.name}</strong>
-                  <span>{notice.description || 'No additional details provided.'}</span>
-                  {notice.category === 'Hazard' && <small>Coverage radius: {notice.hazardRadius || 500}m</small>}
-                </button>
-              </li>
-            ))}
-          </ul>
-          {activeUrgentNotices.length > 3 && (
-            <p className="hazard-notice-more">And {activeUrgentNotices.length - 3} more. Open the map for all urgent notices.</p>
-          )}
-        </aside>
-      )}
       {activePage === 'updates' && (
         <Updates
           key={user?.uid || 'signed-out'}
@@ -242,6 +193,7 @@ function App() {
           onRequestLogin={() => setLoginOpen(true)}
           focusedMapLocation={focusedMapLocation}
           demoMode={demoMode}
+          onNavigate={setActivePage}
         />
       )}
       <Chat
@@ -251,6 +203,16 @@ function App() {
         hidden={activePage !== 'chat'}
       />
       </main>
+      <UrgentNotifications
+        locations={locations}
+        locationsStatus={locationsStatus}
+        locationsError={locationsError}
+        onNavigate={setActivePage}
+        onSelectLocation={(location) => {
+          setFocusedMapLocation(location)
+          setActivePage('map')
+        }}
+      />
       {loginOpen && <Login onClose={() => setLoginOpen(false)} />}
     </div>
   )
