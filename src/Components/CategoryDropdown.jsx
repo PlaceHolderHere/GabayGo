@@ -58,11 +58,13 @@ export default function CategoryDropdown({
   }
 
   const getDisplayText = () => {
+    if (selectedCategories.length === 0 && placeholder) {
+      return placeholder
+    }
     return label || 'Categories'
   }
 
   const allSelected = categories.length > 0 && selectedCategories.length === categories.length
-  const noneSelected = selectedCategories.length === 0
 
   return (
     <div

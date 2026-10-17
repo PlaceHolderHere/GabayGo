@@ -1,4 +1,4 @@
-import { Home, Map, Bell, Store, Bot, LogIn, LogOut, User, ShieldCheck } from 'lucide-react'
+import { Home, Map, Bell, Calendar as CalendarIcon, Store, Bot, LogIn, LogOut, User, ShieldCheck } from 'lucide-react'
 import logo from '../assets/Logo.svg'
 import './Sidebar.css'
 
@@ -7,6 +7,7 @@ export default function Sidebar({ user, demoMode, activePage, onNavigate, onLogi
     { id: 'home', label: 'Home', icon: Home },
     { id: 'map', label: 'Map', icon: Map },
     { id: 'updates', label: 'Updates', icon: Bell },
+    { id: 'calendar', label: 'Calendar', icon: CalendarIcon },
     { id: 'marketplace', label: 'Marketplace', icon: Store },
     { id: 'chat', label: 'Ask AI', icon: Bot },
   ]

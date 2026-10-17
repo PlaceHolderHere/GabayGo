@@ -6,6 +6,7 @@ import './App.css'
 import Map from './Components/Map'
 import Sidebar from './Components/Sidebar'
 import Updates from './Pages/Updates'
+import Calendar from './Pages/Calendar'
 import Marketplace from './Pages/Marketplace'
 import Home from './Pages/Home'
 import Login from './Pages/Login'
@@ -193,6 +194,18 @@ function App() {
       )}
       {activePage === 'updates' && (
         <Updates
+          key={user?.uid || 'signed-out'}
+          user={user}
+          locations={locations}
+          locationsStatus={locationsStatus}
+          locationsError={locationsError}
+          schedules={schedules}
+          schedulesStatus={schedulesStatus}
+          schedulesError={schedulesError}
+        />
+      )}
+      {activePage === 'calendar' && (
+        <Calendar
           key={user?.uid || 'signed-out'}
           user={user}
           locations={locations}

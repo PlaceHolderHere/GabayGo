@@ -99,7 +99,7 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
           <h2 id="home-services-title"><strong>Gabay</strong> <em>Services</em></h2>
         </header>
         <div className="home-service-grid">
-          {services.map((service, index) => {
+          {services.map((service) => {
             const Icon = service.icon
             return (
               <button
