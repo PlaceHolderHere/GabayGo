@@ -4,7 +4,7 @@ import { collection, onSnapshot } from 'firebase/firestore'
 import { auth, db, demoMode } from './firebase'
 import './App.css'
 import Map from './Components/Map'
-import Navbar from './Components/Navbar'
+import Sidebar from './Components/Sidebar'
 import Updates from './Pages/Updates'
 import Marketplace from './Pages/Marketplace'
 import Home from './Pages/Home'
@@ -126,7 +126,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Navbar
+      <Sidebar
         user={user}
         demoMode={demoMode}
         activePage={activePage}
@@ -134,7 +134,8 @@ function App() {
         onLogin={() => setLoginOpen(true)}
         onSignOut={() => signOut(auth)}
       />
-      {demoAuthError && (
+      <main className="app-main">
+        {demoAuthError && (
         <aside className="demo-auth-error" role="alert">
           <strong>Demo access could not start.</strong> {demoAuthError}
         </aside>
@@ -236,6 +237,7 @@ function App() {
         locationsError={locationsError}
         hidden={activePage !== 'chat'}
       />
+      </main>
       {loginOpen && <Login onClose={() => setLoginOpen(false)} />}
     </div>
   )

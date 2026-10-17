@@ -1,5 +1,5 @@
 .map-page {
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - var(--nav-height, 0px));
   padding: 0.85rem clamp(0.65rem, 2vw, 1.4rem) 1.1rem;
   background: var(--color-cream);
 }
@@ -7,7 +7,7 @@
 .map-stage {
   --map-panel-width: min(350px, calc(100% - 2rem));
   position: relative;
-  height: calc(100vh - 72px - 1.95rem);
+  height: calc(100vh - var(--nav-height, 0px) - 1.95rem);
   min-height: 480px;
   overflow: hidden;
   border: 1px solid var(--color-line);
@@ -919,13 +919,13 @@
 
 @media (max-width: 860px) {
   .map-page {
-    min-height: calc(100vh - 64px);
+    min-height: calc(100vh - var(--nav-height, 0px));
     padding: 0.65rem;
   }
 
   .map-stage {
     --map-panel-width: min(350px, calc(100% - 1.3rem));
-    height: calc(100vh - 64px - 1.3rem);
+    height: calc(100vh - var(--nav-height, 0px) - 1.3rem);
     min-height: 440px;
   }
 

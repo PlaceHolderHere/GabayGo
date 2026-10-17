@@ -1,6 +1,20 @@
+:root {
+	--sidebar-width: 72px;
+	--nav-height: 0px;
+}
+
 .app-shell {
+	display: flex;
 	min-height: 100vh;
 	background: var(--color-cream);
+}
+
+.app-main {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
 }
 
 .demo-auth-error {
@@ -126,10 +140,23 @@
 	font-size: 0.72rem;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
+	:root {
+		--sidebar-width: 0px;
+		--nav-height: 60px;
+	}
+
+	.app-shell {
+		flex-direction: column;
+	}
+
+	.app-main {
+		padding-bottom: 60px;
+	}
+
 	.hazard-notice {
 		right: 0.65rem;
-		bottom: 0.65rem;
+		bottom: 4.5rem;
 		width: min(350px, calc(100vw - 1.3rem));
 		max-height: 48vh;
 	}

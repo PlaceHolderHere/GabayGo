@@ -6,7 +6,7 @@
 .home-hero {
   position: relative;
   display: grid;
-  min-height: min(620px, calc(100svh - 72px));
+  min-height: min(620px, calc(100svh - var(--nav-height, 0px)));
   grid-template-columns: 0.95fr 1.05fr;
   align-items: center;
   gap: 2rem;
