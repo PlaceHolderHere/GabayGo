@@ -5,12 +5,21 @@ import EventDetailsModal from '../Components/EventDetailsModal'
 import {
   allCategories,
   reportStatuses,
+  dateKey,
   getLocationEvents,
   getEventTimestamp,
   getEventPeriod,
   getReportStatus,
 } from '../utils/eventUtils'
 import './Updates.css'
+
+const activityTabs = [
+  { id: 'all', label: 'All' },
+  { id: 'today', label: 'Today' },
+  { id: 'tomorrow', label: 'Tomorrow' },
+  { id: 'this-week', label: 'This week' },
+  { id: 'last-week', label: 'Last week' },
+]
 
 export default function Updates({
   user,
@@ -22,6 +31,7 @@ export default function Updates({
   schedulesError,
 }) {
   const [currentTime, setCurrentTime] = useState(() => Date.now())
+  const [activeTab, setActiveTab] = useState('all')
   const [selectedEventId, setSelectedEventId] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilters, setCategoryFilters] = useState([])
@@ -41,6 +51,41 @@ export default function Updates({
   const allEvents = getLocationEvents(locations, schedules)
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
 
+  const now = new Date(currentTime)
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const todayKey = dateKey(today)
+
+  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
+  const tomorrowKey = dateKey(tomorrow)
+
+  const dayOfWeek = today.getDay()
+  const startOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - dayOfWeek)
+  const endOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (6 - dayOfWeek))
+  const startOfWeekKey = dateKey(startOfWeek)
+  const endOfWeekKey = dateKey(endOfWeek)
+
+  const startOfLastWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() - 7)
+  const endOfLastWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() - 1)
+  const startOfLastWeekKey = dateKey(startOfLastWeek)
+  const endOfLastWeekKey = dateKey(endOfLastWeek)
+
+  const matchesTab = (event) => {
+    if (activeTab === 'all') return true
+    if (activeTab === 'today') {
+      return event.startDate <= todayKey && event.endDate >= todayKey
+    }
+    if (activeTab === 'tomorrow') {
+      return event.startDate <= tomorrowKey && event.endDate >= tomorrowKey
+    }
+    if (activeTab === 'this-week') {
+      return event.startDate <= endOfWeekKey && event.endDate >= startOfWeekKey
+    }
+    if (activeTab === 'last-week') {
+      return event.startDate <= endOfLastWeekKey && event.endDate >= startOfLastWeekKey
+    }
+    return true
+  }
+
   const filteredEvents = allEvents.filter((event) => {
     const { location } = event
     const matchesCategory = categoryFilters.length === 0 || categoryFilters.includes(event.category)
@@ -55,7 +100,8 @@ export default function Updates({
     const matchesTimeFrom = !timeFrom || !event.startTime || (event.endTime || event.startTime) >= timeFrom
     const matchesTimeTo = !timeTo || !event.startTime || event.startTime <= timeTo
 
-    return matchesCategory && matchesSearch && matchesReportStatus && matchesPeriod
+    return matchesTab(event)
+      && matchesCategory && matchesSearch && matchesReportStatus && matchesPeriod
       && matchesFrom && matchesTo && matchesTimeFrom && matchesTimeTo
   })
 
@@ -94,6 +140,24 @@ export default function Updates({
             <p>Local announcements, community reports, and service alerts.</p>
           </div>
         </header>
+
+        <nav className="updates-tabs" role="tablist" aria-label="Activity timeframes">
+          {activityTabs.map((tab) => {
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                role="tab"
+                type="button"
+                className={`updates-tab${isActive ? ' updates-tab--active' : ''}`}
+                aria-selected={isActive}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            )
+          })}
+        </nav>
 
         <section className="updates-filters-panel" aria-label="Updates filters">
           <div className="updates-filters">

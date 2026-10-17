@@ -38,6 +38,57 @@
   font-size: 0.85rem;
 }
 
+.updates-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 clamp(1rem, 3vw, 1.75rem);
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-cream);
+  overflow-x: auto;
+}
+
+.updates-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.85rem;
+  padding: 0 1.15rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.updates-tab::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 3px;
+  background: transparent;
+  content: '';
+  transition: background-color 0.15s ease;
+}
+
+.updates-tab:hover {
+  color: var(--color-brown);
+}
+
+.updates-tab--active {
+  color: var(--color-brown);
+}
+
+.updates-tab--active::after {
+  background: var(--color-gold);
+}
+
 .updates-filters-panel {
   border-bottom: 1px solid var(--color-line);
   background: var(--color-soft);
@@ -113,19 +164,21 @@
   gap: 0.4rem;
   justify-self: end;
   min-height: 2.35rem;
-  padding: 0.45rem 0.8rem;
-  border: 1px solid var(--color-line);
-  background: var(--color-cream);
-  color: var(--color-brown);
+  padding: 0.45rem 0.85rem;
+  border: 1px solid #b93824;
+  border-radius: 3px;
+  background: #b93824;
+  color: #ffffff;
   font-size: 0.72rem;
-  font-weight: 650;
+  font-weight: 700;
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .updates-clear-filters:hover {
-  border-color: var(--color-gold);
-  background: var(--color-sand);
+  border-color: #8b2b1f;
+  background: #8b2b1f;
+  color: #ffffff;
 }
 
 .updates-feed-wrapper {
