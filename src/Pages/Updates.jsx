@@ -106,7 +106,7 @@ export default function Updates({
   })
 
   const dailyUpdates = [...filteredEvents].sort((first, second) => getEventTimestamp(second) - getEventTimestamp(first))
-  const dailyUpdatesToShow = showAllUpdates ? dailyUpdates : dailyUpdates.slice(0, 12)
+  const dailyUpdatesToShow = showAllUpdates ? dailyUpdates : dailyUpdates.slice(0, 6)
   const selectedEvent = allEvents.find((event) => event.id === selectedEventId)
 
   const clearFilters = () => {
@@ -271,7 +271,6 @@ export default function Updates({
                       {event.startDate}{event.endDate !== event.startDate ? ` – ${event.endDate}` : ''}
                       {event.startTime ? ` · ${event.startTime}` : ''}
                     </span>
-                    <span className="updates-feed-action">Details →</span>
                   </div>
                 </button>
               ))}
