@@ -4,7 +4,7 @@ import { addDoc, collection, deleteDoc, deleteField, doc, onSnapshot, query, ser
 import { db } from '../firebase'
 import BagoAplayaBorder from '../Components/BagoAplayaBorder'
 import { categoryIcons, temporaryLocationIcon } from '../Components/mapIcons'
-import { bagoAplayaViewBounds, isInBagoAplaya } from '../data/bagoAplaya'
+import { bagoAplayaMaxBounds, bagoAplayaMinZoom, bagoAplayaViewBounds, isInBagoAplaya } from '../data/bagoAplaya'
 import { listingCategories } from '../globals'
 import 'leaflet/dist/leaflet.css'
 import './Marketplace.css'
@@ -33,6 +33,9 @@ function MarketplaceLocationPicker({ locations, customLocation, onChooseLocation
     <MapContainer
       bounds={bagoAplayaViewBounds}
       boundsOptions={{ padding: [12, 12] }}
+      minZoom={bagoAplayaMinZoom}
+      maxBounds={bagoAplayaMaxBounds}
+      maxBoundsViscosity={0.85}
       scrollWheelZoom
       aria-label="Map for choosing a Marketplace listing location"
       className="marketplace-location-map"

@@ -16,6 +16,11 @@ const east = Math.max(...longitudes)
 
 export const bagoAplayaBounds = [[south, west], [north, east]]
 export const bagoAplayaViewBounds = [[south - 0.004, west - 0.004], [north + 0.004, east + 0.004]]
+export const bagoAplayaMinZoom = 14
+export const bagoAplayaMaxBounds = [
+  [south - 0.005, west - 0.008],
+  [north + 0.005, east + 0.008],
+]
 
 // The outer ring and the barangay ring make an even-odd fill that shades nearby areas.
 export const bagoAplayaSurroundings = [

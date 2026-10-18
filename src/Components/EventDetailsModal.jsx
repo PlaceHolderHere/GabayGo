@@ -4,6 +4,7 @@ import { MapContainer, Marker, TileLayer } from 'react-leaflet'
 import { db } from '../firebase'
 import BagoAplayaBorder from './BagoAplayaBorder'
 import { categoryIcons, defaultIcon } from './mapIcons'
+import { bagoAplayaMaxBounds, bagoAplayaMinZoom } from '../data/bagoAplaya'
 import { scheduledCategories, getReportStatus, reportHistory, timestampDateKey } from '../utils/eventUtils'
 import 'leaflet/dist/leaflet.css'
 import './EventDetailsModal.css'
@@ -85,6 +86,9 @@ export default function EventDetailsModal({ selectedEvent, user, onClose, onSche
             <MapContainer
               center={[selectedLocation.lat, selectedLocation.lng]}
               zoom={15}
+              minZoom={bagoAplayaMinZoom}
+              maxBounds={bagoAplayaMaxBounds}
+              maxBoundsViscosity={0.85}
               scrollWheelZoom={false}
               zoomControl
               className="event-detail-leaflet"

@@ -3,6 +3,7 @@ import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMa
 import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import BagoAplayaBorder from './BagoAplayaBorder';
+import { bagoAplayaMaxBounds, bagoAplayaMinZoom } from '../data/bagoAplaya';
 import CategoryDropdown from './CategoryDropdown';
 import { categoryIcons, defaultIcon, temporaryLocationIcon } from './mapIcons';
 import {
@@ -854,7 +855,15 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
         )}
 
         <div className="map-container">
-          <MapContainer center={[7.0435, 125.5315]} zoom={16.5} scrollWheelZoom className="leaflet-map">
+          <MapContainer
+            center={[7.0435, 125.5315]}
+            zoom={16.5}
+            minZoom={bagoAplayaMinZoom}
+            maxBounds={bagoAplayaMaxBounds}
+            maxBoundsViscosity={0.85}
+            scrollWheelZoom
+            className="leaflet-map"
+          >
             <FocusLocation
               location={targetFocusLocation || (focusedMapLocation?.id
                 ? locations.find((location) => location.id === focusedMapLocation.id)
