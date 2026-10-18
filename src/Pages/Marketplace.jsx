@@ -5,10 +5,9 @@ import { db } from '../firebase'
 import BagoAplayaBorder from '../Components/BagoAplayaBorder'
 import { categoryIcons, temporaryLocationIcon } from '../Components/mapIcons'
 import { bagoAplayaViewBounds, isInBagoAplaya } from '../data/bagoAplaya'
+import { listingCategories } from '../globals'
 import 'leaflet/dist/leaflet.css'
 import './Marketplace.css'
-
-const listingCategories = ['Food', 'Produce', 'Retail', 'Crafts', 'Services', 'Other']
 const emptyForm = {
   title: '',
   category: listingCategories[0],

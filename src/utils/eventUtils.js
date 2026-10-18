@@ -1,8 +1,26 @@
-export const scheduledCategories = ['Marketplace', 'Outage', 'Service', 'Garden', 'Event', 'Schedule', 'Evacuation', 'Relief']
-export const allCategories = ['Location', 'Service', 'Marketplace', 'Garden', 'Event', 'Schedule', 'Report', 'Outage', 'Hazard', 'Evacuation', 'Relief']
-export const calendarCategories = ['Marketplace', 'Service', 'Garden', 'Event', 'Schedule', 'Report', 'Outage', 'Evacuation', 'Relief']
-export const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-export const reportStatuses = ['Submitted', 'Under review', 'Resolved']
+import {
+  calendarCategories,
+  categories,
+  defaultHazardRadius,
+  reportStatuses,
+  scheduledCategories,
+  timeSensitiveCategories,
+  timeStampedCategories,
+  urgentCategories,
+  weekDays,
+} from '../globals'
+
+export {
+  calendarCategories,
+  categories,
+  defaultHazardRadius,
+  reportStatuses,
+  scheduledCategories,
+  timeSensitiveCategories,
+  timeStampedCategories,
+  urgentCategories,
+  weekDays,
+}
 
 export function dateKey(date) {
   const year = date.getFullYear()

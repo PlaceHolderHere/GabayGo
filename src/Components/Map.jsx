@@ -5,15 +5,14 @@ import { db } from '../firebase';
 import BagoAplayaBorder from './BagoAplayaBorder';
 import CategoryDropdown from './CategoryDropdown';
 import { categoryIcons, defaultIcon, temporaryLocationIcon } from './mapIcons';
+import {
+  categories,
+  defaultHazardRadius,
+  timeSensitiveCategories,
+  timeStampedCategories,
+} from '../globals';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
-
-// INITIAL LOCATIONS
-const categories = ['Location', 'Service', 'Marketplace', 'Garden', 'Event', 'Schedule', 'Report', 'Outage', 'Hazard', 'Evacuation', 'Relief']
-const timeSensitiveCategories = ['Marketplace', 'Outage', 'Service', 'Garden', 'Event', 'Schedule', 'Evacuation', 'Relief']
-const timeStampedCategories = ['Report']
-const defaultHazardRadius = 500
-const urgentCategories = ['Hazard', 'Outage', 'Evacuation', 'Relief']
 
 function formatRouteDistance(meters) {
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;

@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
+import { defaultHazardRadius, urgentCategories } from '../globals'
 import './UrgentNotifications.css'
-
-const urgentCategories = ['Hazard', 'Outage', 'Evacuation', 'Relief']
-const defaultHazardRadius = 500
 
 function parseLocationDate(date, time) {
   if (!date) return null

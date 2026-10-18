@@ -3,7 +3,7 @@ import { RotateCcw } from 'lucide-react'
 import CategoryDropdown from '../Components/CategoryDropdown'
 import EventDetailsModal from '../Components/EventDetailsModal'
 import {
-  allCategories,
+  categories,
   reportStatuses,
   dateKey,
   getLocationEvents,
@@ -211,7 +211,7 @@ export default function Updates({
               <CategoryDropdown
                 id="updates-categories-dropdown"
                 ariaLabelledBy="updates-categories-label"
-                categories={allCategories}
+                categories={categories}
                 selectedCategories={categoryFilters}
                 onChange={setCategoryFilters}
                 placeholder="All categories"
