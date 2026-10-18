@@ -7,9 +7,16 @@ import './CommunityParticipationForms.css'
 const updateTopics = ['Garbage collection', 'Outages', 'Services', 'Marketplace', 'Garden activities', 'Events', 'Schedules', 'Evacuation and relief', 'Community reports']
 const volunteerOptions = ['Garbage collection and cleanups', 'Emergency response and evacuation', 'Relief distribution', 'Community services', 'Garden activities', 'Events and schedules', 'Other']
 
-export default function CommunityParticipationForms({ user, onRequestLogin }) {
-  const [selectedUpdateTopics, setSelectedUpdateTopics] = useState([])
-  const [preferencesStatus, setPreferencesStatus] = useState(user && db ? 'loading' : 'idle')
+export default function CommunityParticipationForms({
+  user,
+  onRequestLogin,
+  selectedUpdateTopics,
+  onUpdateTopicsChange,
+  onSavePreferences,
+  profileStatus,
+  isSavingProfile,
+}) {
+  const [preferencesStatus, setPreferencesStatus] = useState('ready')
   const [preferencesFeedback, setPreferencesFeedback] = useState('')
   const [volunteerForm, setVolunteerForm] = useState({ name: user?.displayName || '', contact: '', methods: [], notes: '', createdAt: null })
   const [volunteerStatus, setVolunteerStatus] = useState(user && db ? 'loading' : 'idle')
@@ -30,13 +37,6 @@ export default function CommunityParticipationForms({ user, onRequestLogin }) {
   useEffect(() => {
     if (!db || !user?.uid) return undefined
 
-    const preferencesUnsubscribe = onSnapshot(doc(db, 'UpdatePreferences', user.uid), (snapshot) => {
-      setSelectedUpdateTopics(snapshot.exists() ? snapshot.data().topics || [] : [])
-      setPreferencesStatus('ready')
-    }, () => {
-      setPreferencesStatus('error')
-      setPreferencesFeedback('Update preferences could not be loaded.')
-    })
     const volunteerUnsubscribe = onSnapshot(doc(db, 'VolunteerSignups', user.uid), (snapshot) => {
       const signup = snapshot.exists() ? snapshot.data() : null
       setVolunteerForm({
@@ -53,23 +53,18 @@ export default function CommunityParticipationForms({ user, onRequestLogin }) {
     })
 
     return () => {
-      preferencesUnsubscribe()
       volunteerUnsubscribe()
     }
   }, [user?.displayName, user?.uid])
 
   const handleSavePreferences = async (event) => {
     event.preventDefault()
-    if (!db || !user || preferencesStatus === 'saving') return
+    if (!db || !user || preferencesStatus === 'saving' || profileStatus !== 'ready' || isSavingProfile) return
 
     setPreferencesStatus('saving')
     setPreferencesFeedback('')
     try {
-      await setDoc(doc(db, 'UpdatePreferences', user.uid), {
-        userId: user.uid,
-        topics: selectedUpdateTopics,
-        updatedAt: serverTimestamp(),
-      })
+      await onSavePreferences()
       setPreferencesStatus('ready')
       setPreferencesFeedback('Your update preferences are saved.')
     } catch {
@@ -129,16 +124,16 @@ export default function CommunityParticipationForms({ user, onRequestLogin }) {
         <form className="updates-community-form" onSubmit={handleSavePreferences}>
           <h3>Updates that matter to you</h3>
           <p>Select the topics you want to follow.</p>
-          <fieldset disabled={!user || !db || preferencesStatus === 'saving' || preferencesStatus === 'loading'}>
+          <fieldset disabled={!user || !db || profileStatus !== 'ready' || preferencesStatus === 'saving' || isSavingProfile}>
             <legend>Update topics</legend>
             {updateTopics.map((topic) => (
               <label key={topic}>
                 <input
                   type="checkbox"
                   checked={selectedUpdateTopics.includes(topic)}
-                  onChange={(event) => setSelectedUpdateTopics((selected) => event.target.checked
-                    ? [...selected, topic]
-                    : selected.filter((item) => item !== topic))}
+                  onChange={(event) => onUpdateTopicsChange(event.target.checked
+                    ? [...selectedUpdateTopics, topic]
+                    : selectedUpdateTopics.filter((item) => item !== topic))}
                 />
                 <span>{topic}</span>
               </label>
@@ -147,8 +142,8 @@ export default function CommunityParticipationForms({ user, onRequestLogin }) {
           {!user && <p className="updates-form-note">Sign in to save your update preferences.</p>}
           {!user && <button className="updates-form-login" type="button" onClick={onRequestLogin}>Log in</button>}
           {preferencesFeedback && <p className="updates-form-feedback" role={preferencesStatus === 'error' ? 'alert' : 'status'}>{preferencesFeedback}</p>}
-          <button className="updates-form-submit" type="submit" disabled={!user || !db || preferencesStatus === 'saving' || preferencesStatus === 'loading'}>
-            {preferencesStatus === 'saving' ? 'Saving…' : 'Save update preferences'}
+          <button className="updates-form-submit" type="submit" disabled={!user || !db || profileStatus !== 'ready' || preferencesStatus === 'saving' || isSavingProfile}>
+            {preferencesStatus === 'saving' || isSavingProfile ? 'Saving…' : 'Save update preferences'}
           </button>
           <div className="updates-push-settings">
             <h3>Event reminders</h3>

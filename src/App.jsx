@@ -10,6 +10,7 @@ import Calendar from './Pages/Calendar'
 import Marketplace from './Pages/Marketplace'
 import Home from './Pages/Home'
 import Login from './Pages/Login'
+import UserProfile from './Pages/UserProfile'
 import Chat from './Pages/Chat'
 import UrgentNotifications from './Components/UrgentNotifications'
 import { listenForForegroundMessages } from './notifications'
@@ -140,6 +141,14 @@ function App() {
           locations={locations}
           locationsStatus={locationsStatus}
           onNavigate={setActivePage}
+          onRequestLogin={() => setLoginOpen(true)}
+        />
+      )}
+      {activePage === 'profile' && (
+        <UserProfile
+          key={user?.uid || 'signed-out'}
+          user={user}
+          demoMode={demoMode}
           onRequestLogin={() => setLoginOpen(true)}
         />
       )}

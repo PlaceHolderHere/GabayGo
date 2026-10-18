@@ -22,6 +22,8 @@ These Firestore rules intentionally grant admin access to every anonymous accoun
 
 ## Event push reminders
 
-Add `VITE_FIREBASE_VAPID_KEY` to `.env` using the public key from Firebase Console > Project settings > Cloud Messaging > Web Push certificates, then rebuild/redeploy the web app. The Updates participation section lets signed-in users enable reminders on the current browser. A scheduled Cloud Function sends a push notification at 9:00 a.m. Asia/Manila on the day before entries in `Locations` with category `Event` and entries in `Schedules`.
+Add `VITE_FIREBASE_VAPID_KEY` to `.env` using the public key from Firebase Console > Project settings > Cloud Messaging > Web Push certificates, then rebuild/redeploy the web app. The Profile page lets signed-in users enable reminders on the current browser. A scheduled Cloud Function sends a push notification at 9:00 a.m. Asia/Manila on the day before entries in `Locations` with category `Event` and entries in `Schedules`.
+
+Signed-in users have a `UserProfiles/{uid}` document containing `isAdmin`, `updateTopics`, `language` (`english`, `filipino`, or `bisaya`), and `updatedAt`. The profile's admin flag mirrors the protected `admin/{uid}` record; authorization continues to use that protected record. Volunteer contact details remain in the separately protected `VolunteerSignups` collection.
 
 To deploy reminders, select your Firebase project with `firebase use --add`, enable Cloud Messaging and Cloud Firestore, then run `firebase deploy --only firestore:rules,functions`. Scheduled Functions require the Blaze billing plan because Firebase provisions Cloud Scheduler. Add every production web domain under Authentication > Settings > Authorized domains. Users must allow notifications in their browser; the site must be served over HTTPS (localhost is also supported).

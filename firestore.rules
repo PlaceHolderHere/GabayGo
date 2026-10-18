@@ -121,9 +121,38 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    function validUserProfile(data, uid) {
+      return data.keys().hasAll(['userId', 'isAdmin', 'updateTopics', 'language', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'isAdmin', 'updateTopics', 'language', 'updatedAt'])
+        && data.userId == uid
+        && data.isAdmin is bool
+        && data.updateTopics is list
+        && data.updateTopics.size() <= 9
+        && data.updateTopics.hasOnly([
+          'Garbage collection', 'Outages', 'Services', 'Marketplace', 'Garden activities',
+          'Events', 'Schedules', 'Evacuation and relief', 'Community reports'
+        ])
+        && data.language in ['english', 'filipino', 'bisaya']
+        && data.updatedAt == request.time;
+    }
+
     match /admin/{uid} {
       allow get: if request.auth != null && request.auth.uid == uid;
       allow list, create, update, delete: if false;
+    }
+
+    match /UserProfiles/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && validUserProfile(request.resource.data, uid)
+        && request.resource.data.isAdmin == isAdmin();
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && validUserProfile(request.resource.data, uid)
+        && (request.resource.data.isAdmin == resource.data.isAdmin
+          || request.resource.data.isAdmin == isAdmin());
+      allow delete: if false;
     }
 
     match /Locations/{locationId} {

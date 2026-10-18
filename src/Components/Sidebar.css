@@ -128,12 +128,10 @@
 
 .sidebar-user-badge {
   color: var(--color-brown);
-  cursor: default;
 }
 
-.sidebar-user-badge:hover {
-  transform: none;
-  background: color-mix(in srgb, var(--color-sand) 40%, var(--color-cream));
+.sidebar-user-badge.sidebar-nav-item--active {
+  color: var(--color-sand);
 }
 
 .sidebar-auth-btn {

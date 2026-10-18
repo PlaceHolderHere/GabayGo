@@ -1,0 +1,198 @@
+.user-profile-page {
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  background: var(--color-soft);
+}
+
+.user-profile-content {
+  display: grid;
+  width: min(100%, 980px);
+  gap: 1.25rem;
+  margin: 0 auto;
+}
+
+.user-profile-heading {
+  padding: 0.5rem 0;
+}
+
+.user-profile-eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.user-profile-heading h1,
+.user-profile-signed-out h1 {
+  margin: 0;
+  color: var(--color-brown);
+  font-family: Manrope, sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+}
+
+.user-profile-heading > p:last-child,
+.user-profile-signed-out > p:not(.user-profile-eyebrow) {
+  margin: 0.4rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.user-profile-card {
+  border: 1px solid var(--color-line);
+  background: var(--color-cream);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-brown) 7%, transparent);
+}
+
+.user-profile-account {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.user-profile-avatar {
+  display: grid;
+  width: 2.8rem;
+  height: 2.8rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-sand);
+  color: var(--color-brown);
+  font-family: Manrope, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.user-profile-account h2,
+.user-profile-language h2 {
+  margin: 0;
+  color: var(--color-brown);
+  font-family: Manrope, sans-serif;
+  font-size: 0.95rem;
+}
+
+.user-profile-account p,
+.user-profile-language p {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.user-profile-role {
+  margin-left: auto;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.user-profile-role--admin {
+  border-color: color-mix(in srgb, var(--color-gold) 60%, var(--color-line));
+  background: color-mix(in srgb, var(--color-gold) 16%, var(--color-cream));
+  color: var(--color-brown);
+}
+
+.user-profile-language {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-top: 1px solid var(--color-line);
+}
+
+.user-profile-language-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+}
+
+.user-profile-language-control label {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--color-brown);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.user-profile-language-control select {
+  min-width: 9rem;
+  height: 2.4rem;
+  padding: 0 0.55rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-cream);
+  color: var(--color-brown);
+  font: inherit;
+  font-size: 0.75rem;
+}
+
+.user-profile-language-control button,
+.user-profile-signed-out button {
+  min-height: 2.4rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-brown);
+  background: var(--color-brown);
+  color: var(--color-cream);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.user-profile-language-control button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.user-profile-feedback {
+  margin: 0;
+  padding: 0.6rem 1.25rem;
+  color: var(--color-muted);
+  font-size: 0.74rem;
+}
+
+.user-profile-feedback[role='alert'] {
+  color: #8b2b1f;
+}
+
+.user-profile-signed-out {
+  width: min(100%, 540px);
+  margin: 4rem auto;
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
+.user-profile-signed-out button {
+  margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+  .user-profile-account,
+  .user-profile-language {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .user-profile-role {
+    margin-left: 0;
+  }
+
+  .user-profile-language-control {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .user-profile-language-control label,
+  .user-profile-language-control select,
+  .user-profile-language-control button {
+    width: 100%;
+  }
+}

@@ -1,4 +1,4 @@
-import { Home, Map, Bell, Calendar as CalendarIcon, Store, Bot, LogIn, LogOut, User, ShieldCheck } from 'lucide-react'
+import { Home, Map, Bell, Calendar as CalendarIcon, Store, Bot, LogOut, User, ShieldCheck } from 'lucide-react'
 import logo from '../assets/Logo.svg'
 import './Sidebar.css'
 
@@ -48,40 +48,32 @@ export default function Sidebar({ user, demoMode, activePage, onNavigate, onLogi
       </nav>
 
       <div className="sidebar-bottom">
-        {user ? (
-          <>
-            <div
-              className="sidebar-nav-item sidebar-user-badge"
-              tabIndex={0}
-              role="status"
-              aria-label={`Signed in as ${userDisplayName}`}
-            >
-              {user.isAnonymous && demoMode ? (
-                <ShieldCheck size={20} className="sidebar-icon sidebar-icon--demo" />
-              ) : (
-                <User size={20} className="sidebar-icon" />
-              )}
-              <span className="sidebar-tooltip" role="tooltip">{userDisplayName}</span>
-            </div>
-            <button
-              className="sidebar-nav-item sidebar-auth-btn"
-              type="button"
-              onClick={onSignOut}
-              aria-label="Sign out"
-            >
-              <LogOut size={20} className="sidebar-icon" />
-              <span className="sidebar-tooltip" role="tooltip">Sign out</span>
-            </button>
-          </>
-        ) : (
+        <button
+          className={`sidebar-nav-item sidebar-user-badge${activePage === 'profile' ? ' sidebar-nav-item--active' : ''}`}
+          type="button"
+          onClick={() => {
+            onNavigate('profile')
+            if (!user) onLogin()
+          }}
+          aria-label={user ? `Profile for ${userDisplayName}` : 'Log in to view your profile'}
+          aria-current={activePage === 'profile' ? 'page' : undefined}
+        >
+          {user?.isAnonymous && demoMode ? (
+            <ShieldCheck size={20} className="sidebar-icon sidebar-icon--demo" />
+          ) : (
+            <User size={20} className="sidebar-icon" />
+          )}
+          <span className="sidebar-tooltip" role="tooltip">{user ? 'Profile' : 'Profile · Log in'}</span>
+        </button>
+        {user && (
           <button
             className="sidebar-nav-item sidebar-auth-btn"
             type="button"
-            onClick={onLogin}
-            aria-label="Log in"
+            onClick={onSignOut}
+            aria-label="Sign out"
           >
-            <LogIn size={20} className="sidebar-icon" />
-            <span className="sidebar-tooltip" role="tooltip">Log in</span>
+            <LogOut size={20} className="sidebar-icon" />
+            <span className="sidebar-tooltip" role="tooltip">Sign out</span>
           </button>
         )}
       </div>

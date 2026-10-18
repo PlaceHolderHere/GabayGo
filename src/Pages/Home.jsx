@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
 import { BriefcaseBusiness, ExternalLink, MessageSquareWarning, PhoneCall, Store } from 'lucide-react'
 import BagoAplayaBorder from '../Components/BagoAplayaBorder'
-import CommunityParticipationForms from '../Components/CommunityParticipationForms'
 import EventDetailsModal from '../Components/EventDetailsModal'
 import { categoryIcons, defaultIcon } from '../Components/mapIcons'
 import { officialContacts, officialServices } from '../data/officialResources'
@@ -201,10 +200,6 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
           </div>
         )}
         <button className="home-all-updates" type="button" onClick={() => onNavigate('updates')}>View all updates <span aria-hidden="true">↗</span></button>
-      </section>
-
-      <section className="home-community-section" aria-label="Community participation">
-        <CommunityParticipationForms key={user?.uid || 'signed-out'} user={user} onRequestLogin={onRequestLogin} />
       </section>
 
       {selectedUpdate && (
