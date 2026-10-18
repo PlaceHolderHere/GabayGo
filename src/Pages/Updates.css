@@ -258,6 +258,7 @@
 .updates-feed-icon--garden     { background: #e2eedf; color: #4b7b42; }
 .updates-feed-icon--event      { background: #fceadf; color: #c56b2d; }
 .updates-feed-icon--schedule   { background: #ddf1ed; color: #236b5c; }
+.updates-feed-icon--community-engagement { background: #eee7f7; color: #684a91; }
 .updates-feed-icon--report     { background: #fef3d7; color: #b88a14; }
 
 /* ─── Content (center) ─── */
@@ -315,6 +316,7 @@
 .updates-feed-type-badge--garden     { background: #e2eedf; color: #3a5e32; border: 1px solid color-mix(in srgb, #4b7b42 22%, transparent); }
 .updates-feed-type-badge--event      { background: #fceadf; color: #8e4c1e; border: 1px solid color-mix(in srgb, #c56b2d 22%, transparent); }
 .updates-feed-type-badge--schedule   { background: #ddf1ed; color: #1a5248; border: 1px solid color-mix(in srgb, #236b5c 22%, transparent); }
+.updates-feed-type-badge--community-engagement { background: #eee7f7; color: #583c80; border: 1px solid color-mix(in srgb, #7b5aa6 22%, transparent); }
 .updates-feed-type-badge--report     { background: #fef3d7; color: #8a6b0e; border: 1px solid color-mix(in srgb, var(--color-gold) 30%, transparent); }
 
 /* ─── Date / description ─── */
@@ -361,6 +363,7 @@
 .updates-feed-item--garden { --event-color: #4b7b42; }
 .updates-feed-item--event { --event-color: #c56b2d; }
 .updates-feed-item--schedule { --event-color: #236b5c; }
+.updates-feed-item--community-engagement { --event-color: #7b5aa6; }
 .updates-feed-item--evacuation { --event-color: #b93824; }
 .updates-feed-item--relief { --event-color: #287c8e; }
 .updates-feed-item--location { --event-color: var(--color-brown); }

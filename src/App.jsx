@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth'
-import { collection, onSnapshot } from 'firebase/firestore'
+import { collection, doc, onSnapshot, query, where } from 'firebase/firestore'
 import { auth, db, demoMode } from './firebase'
 import './App.css'
-import Map from './Components/Map'
+import MapPage from './Components/Map'
 import Sidebar from './Components/Sidebar'
 import Updates from './Pages/Updates'
 import Calendar from './Pages/Calendar'
@@ -23,8 +23,12 @@ function App() {
   const [loginOpen, setLoginOpen] = useState(false)
   const [activePage, setActivePage] = useState('home')
   const [locations, setLocations] = useState([])
-  const [locationsStatus, setLocationsStatus] = useState(db ? 'loading' : 'unavailable')
-  const [locationsError, setLocationsError] = useState('')
+  const [locationsLoadState, setLocationsLoadState] = useState({
+    key: null,
+    status: db ? 'loading' : 'unavailable',
+    error: '',
+  })
+  const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' })
   const [schedules, setSchedules] = useState([])
   const [schedulesStatus, setSchedulesStatus] = useState(db ? 'loading' : 'unavailable')
   const [schedulesError, setSchedulesError] = useState('')
@@ -74,20 +78,98 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (!db || !user?.uid || (demoMode && user.isAnonymous)) return undefined
+
+    return onSnapshot(doc(db, 'admin', user.uid), (adminDoc) => {
+      setAdminCheck({
+        uid: user.uid,
+        status: adminDoc.exists() && adminDoc.data().enabled === true ? 'admin' : 'not-admin',
+      })
+    }, () => {
+      setAdminCheck({ uid: user.uid, status: 'error' })
+    })
+  }, [user?.uid, user?.isAnonymous])
+
+  const isDemoAdmin = demoMode && user?.isAnonymous === true
+  const isAdmin = isDemoAdmin || (adminCheck.uid === user?.uid && adminCheck.status === 'admin')
+  const locationsSourceKey = `${user?.uid ?? 'signed-out'}:${isAdmin ? 'admin' : 'member'}`
+  const hasCurrentLocationsLoad = locationsLoadState.key === locationsSourceKey
+  const locationsStatus = hasCurrentLocationsLoad
+    ? locationsLoadState.status
+    : db ? 'loading' : 'unavailable'
+  const locationsError = hasCurrentLocationsLoad ? locationsLoadState.error : ''
+
+  useEffect(() => {
     if (!db) return undefined
 
-    return onSnapshot(collection(db, 'Locations'), (snapshot) => {
-      const nextLocations = snapshot.docs
-        .map((locationDoc) => ({ id: locationDoc.id, ...locationDoc.data() }))
-        .filter((location) => Number.isFinite(location.lat) && Number.isFinite(location.lng))
-      setLocations(nextLocations)
-      setLocationsStatus('ready')
-      setLocationsError('')
+    const sourceData = new Map()
+    const receivedSources = new Set()
+    const failedSources = new Set()
+    const sources = [
+      {
+        id: 'locations',
+        query: query(collection(db, 'Locations'), where('category', '!=', 'Community engagement')),
+      },
+      {
+        id: 'approved-engagement',
+        query: query(
+          collection(db, 'Locations'),
+          where('category', '==', 'Community engagement'),
+          where('engagementStatus', '==', 'approved'),
+        ),
+      },
+    ]
+
+    if (user?.uid) {
+      sources.push({
+        id: 'own-engagement',
+        query: query(
+          collection(db, 'Locations'),
+          where('category', '==', 'Community engagement'),
+          where('createdBy', '==', user.uid),
+        ),
+      })
+    }
+    if (isAdmin) {
+      sources.push({
+        id: 'all-engagement',
+        query: query(collection(db, 'Locations'), where('category', '==', 'Community engagement')),
+      })
+    }
+
+    const unsubscribes = sources.map(({ id, query: locationsQuery }) => onSnapshot(locationsQuery, (snapshot) => {
+      sourceData.set(id, snapshot.docs.map((locationDoc) => ({ id: locationDoc.id, ...locationDoc.data() })))
+      receivedSources.add(id)
+      const combinedLocations = new Map()
+      sourceData.forEach((items) => items.forEach((location) => {
+        if (Number.isFinite(location.lat) && Number.isFinite(location.lng)) {
+          combinedLocations.set(location.id, location)
+        }
+      }))
+      setLocations([...combinedLocations.values()])
+      if (receivedSources.size === sources.length) {
+        setLocationsLoadState({
+          key: locationsSourceKey,
+          status: failedSources.size > 0 ? 'error' : 'ready',
+          error: failedSources.size > 0
+            ? 'Locations could not be loaded. Check the Firestore database and its read rules.'
+            : '',
+        })
+      }
     }, () => {
-      setLocationsStatus('error')
-      setLocationsError('Locations could not be loaded. Check the Firestore database and its read rules.')
-    })
-  }, [])
+      failedSources.add(id)
+      receivedSources.add(id)
+      if (receivedSources.size === sources.length) {
+        setLocationsLoadState({
+          key: locationsSourceKey,
+          status: 'error',
+          error: 'Locations could not be loaded. Check the Firestore database and its read rules.',
+        })
+      }
+    }))
+
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe())
+  }, [user?.uid, isAdmin, locationsSourceKey])
 
   useEffect(() => {
     if (!db) return undefined
@@ -119,6 +201,10 @@ function App() {
     })
   }, [])
 
+  const publicLocations = locations.filter((location) => (
+    location.category !== 'Community engagement' || location.engagementStatus === 'approved'
+  ))
+
   return (
     <div className="app-shell">
       <Sidebar
@@ -138,7 +224,7 @@ function App() {
       {activePage === 'home' && (
         <Home
           user={user}
-          locations={locations}
+          locations={publicLocations}
           locationsStatus={locationsStatus}
           onNavigate={setActivePage}
           onRequestLogin={() => setLoginOpen(true)}
@@ -156,30 +242,34 @@ function App() {
         <Updates
           key={user?.uid || 'signed-out'}
           user={user}
-          locations={locations}
+          locations={publicLocations}
           locationsStatus={locationsStatus}
           locationsError={locationsError}
           schedules={schedules}
           schedulesStatus={schedulesStatus}
           schedulesError={schedulesError}
+          onNavigate={setActivePage}
+          onRequestLogin={() => setLoginOpen(true)}
         />
       )}
       {activePage === 'calendar' && (
         <Calendar
           key={user?.uid || 'signed-out'}
           user={user}
-          locations={locations}
+          locations={publicLocations}
           locationsStatus={locationsStatus}
           locationsError={locationsError}
           schedules={schedules}
           schedulesStatus={schedulesStatus}
           schedulesError={schedulesError}
+          onNavigate={setActivePage}
+          onRequestLogin={() => setLoginOpen(true)}
         />
       )}
       {activePage === 'marketplace' && (
         <Marketplace
           user={user}
-          locations={locations}
+          locations={publicLocations}
           marketplaceListings={marketplaceListings}
           locationsStatus={locationsStatus}
           marketplaceListingsStatus={marketplaceListingsStatus}
@@ -193,7 +283,7 @@ function App() {
         />
       )}
       {activePage === 'map' && (
-        <Map
+        <MapPage
           key={focusedMapLocation?.id || (focusedMapLocation ? `custom-${focusedMapLocation.lat}-${focusedMapLocation.lng}` : 'map')}
           user={user}
           locations={locations}
@@ -206,14 +296,14 @@ function App() {
         />
       )}
       <Chat
-        locations={locations}
+        locations={publicLocations}
         locationsStatus={locationsStatus}
         locationsError={locationsError}
         hidden={activePage !== 'chat'}
       />
       </main>
       <UrgentNotifications
-        locations={locations}
+        locations={publicLocations}
         locationsStatus={locationsStatus}
         locationsError={locationsError}
         onNavigate={setActivePage}

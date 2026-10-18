@@ -1,0 +1,140 @@
+.community-engagement-actions {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.8rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-soft);
+}
+
+.community-engagement-actions h3,
+.community-engagement-admin-signups h4 {
+  margin: 0;
+  color: var(--color-brown);
+  font-family: Manrope, sans-serif;
+  font-size: 0.82rem;
+}
+
+.community-engagement-actions > p,
+.community-engagement-admin-signups > p,
+.community-engagement-signup span {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.community-engagement-actions > button {
+  min-height: 2.35rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--color-brown);
+  background: var(--color-brown);
+  color: var(--color-cream);
+  font: inherit;
+  font-size: 0.73rem;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+}
+
+.community-engagement-actions > button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.community-engagement-actions > .community-engagement-profile-link {
+  background: transparent;
+  color: var(--color-brown);
+}
+
+.community-engagement-message[role='alert'],
+.community-engagement-admin-signups [role='alert'] {
+  color: #8b2b1f;
+}
+
+.community-engagement-admin-signups {
+  display: grid;
+  gap: 0.45rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--color-line);
+}
+
+.community-engagement-signup {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.55rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-cream);
+}
+
+.community-engagement-signup strong {
+  color: var(--color-brown);
+  font-size: 0.74rem;
+}
+
+.community-engagement-signups {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--color-line);
+  background: var(--color-cream);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-brown) 7%, transparent);
+}
+
+.community-engagement-signups header h2 {
+  margin: 0;
+  color: var(--color-brown);
+  font-family: Manrope, sans-serif;
+  font-size: 0.95rem;
+}
+
+.community-engagement-signups header p,
+.community-engagement-signups > p,
+.community-engagement-my-signup p {
+  margin: 0.3rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.73rem;
+}
+
+.community-engagement-signups [role='alert'] {
+  color: #8b2b1f;
+}
+
+.community-engagement-my-signup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem;
+  border: 1px solid var(--color-line);
+}
+
+.community-engagement-my-signup h3 {
+  margin: 0;
+  color: var(--color-brown);
+  font-size: 0.8rem;
+}
+
+.community-engagement-my-signup button {
+  min-height: 2.1rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-soft);
+  color: var(--color-brown);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.community-engagement-my-signup button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+@media (max-width: 600px) {
+  .community-engagement-my-signup {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

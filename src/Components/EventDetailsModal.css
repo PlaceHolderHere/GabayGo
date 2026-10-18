@@ -205,6 +205,7 @@
 .event-detail-category--marketplace { --event-color: #43845b; }
 .event-detail-category--garden { --event-color: #4b7b42; }
 .event-detail-category--event { --event-color: #c56b2d; }
+.event-detail-category--community-engagement { --event-color: #7b5aa6; }
 .event-detail-category--schedule { --event-color: #236b5c; }
 .event-detail-category--evacuation { --event-color: #b93824; }
 .event-detail-category--relief { --event-color: #287c8e; }

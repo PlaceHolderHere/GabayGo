@@ -37,6 +37,7 @@ export const categoryIcons = {
   Marketplace: new CustomIcon({ iconUrl: marketplaceImage }),
   Garden: new CustomIcon({ iconUrl: gardenImage }),
   Event: new CustomIcon({ iconUrl: eventImage }),
+  'Community engagement': new CustomIcon({ iconUrl: eventImage }),
   Schedule: defaultIcon,
   Report: new CustomIcon({ iconUrl: reportImage }),
   Hazard: HazardIcon,

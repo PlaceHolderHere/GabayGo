@@ -53,7 +53,7 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
   const [selectedUpdate, setSelectedUpdate] = useState(null)
 
   const updates = [...locations]
-    .filter((location) => ['Outage', 'Service', 'Marketplace', 'Report', 'Hazard'].includes(location.category))
+    .filter((location) => ['Outage', 'Service', 'Marketplace', 'Report', 'Hazard', 'Community engagement'].includes(location.category))
     .sort((first, second) => getLocationTime(second) - getLocationTime(first))
     .slice(0, 3)
 
@@ -212,6 +212,8 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
           })}
           user={user}
           onClose={() => setSelectedUpdate(null)}
+          onRequestLogin={onRequestLogin}
+          onNavigate={onNavigate}
         />
       )}
     </main>

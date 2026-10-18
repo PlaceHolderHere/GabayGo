@@ -116,6 +116,8 @@ export default function Updates({
   schedules = [],
   schedulesStatus,
   schedulesError,
+  onNavigate,
+  onRequestLogin,
 }) {
   const [currentTime, setCurrentTime] = useState(() => Date.now())
   const [activeTab, setActiveTab] = useState('all')
@@ -338,13 +340,13 @@ export default function Updates({
             <div className="updates-feed">
               {dailyUpdatesToShow.map((event) => (
                 <button
-                  className={`updates-feed-item updates-feed-item--${event.category.toLowerCase()} updates-feed-item--${event.kind}`}
+                  className={`updates-feed-item updates-feed-item--${event.category.toLowerCase().replace(/\s+/g, '-')} updates-feed-item--${event.kind}`}
                   key={event.id}
                   type="button"
                   onClick={() => setSelectedEventId(event.id)}
                 >
                   {/* Icon on the left */}
-                  <span className={`updates-feed-icon updates-feed-icon--${event.category.toLowerCase()}`}>
+                  <span className={`updates-feed-icon updates-feed-icon--${event.category.toLowerCase().replace(/\s+/g, '-')}`}>
                     {getCategoryIcon(event.category)}
                   </span>
 
@@ -352,7 +354,7 @@ export default function Updates({
                   <div className="updates-feed-content">
                     <div className="updates-feed-title-row">
                       <h3 className="updates-feed-title">{event.title}</h3>
-                      <span className={`updates-feed-type-badge updates-feed-type-badge--${event.category.toLowerCase()}`}>
+                      <span className={`updates-feed-type-badge updates-feed-type-badge--${event.category.toLowerCase().replace(/\s+/g, '-')}`}>
                         {event.activity || event.category}
                       </span>
                       {event.category === 'Report' && (
@@ -393,6 +395,8 @@ export default function Updates({
           selectedEvent={selectedEvent}
           user={user}
           onClose={() => setSelectedEventId(null)}
+          onRequestLogin={onRequestLogin}
+          onNavigate={onNavigate}
         />
       )}
     </main>

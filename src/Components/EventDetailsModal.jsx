@@ -3,13 +3,14 @@ import { deleteDoc, doc } from 'firebase/firestore'
 import { MapContainer, Marker, TileLayer } from 'react-leaflet'
 import { db } from '../firebase'
 import BagoAplayaBorder from './BagoAplayaBorder'
+import CommunityEngagementActions from './CommunityEngagementActions'
 import { categoryIcons, defaultIcon } from './mapIcons'
 import { bagoAplayaMaxBounds, bagoAplayaMinZoom } from '../data/bagoAplaya'
 import { scheduledCategories, getReportStatus, reportHistory, timestampDateKey } from '../utils/eventUtils'
 import 'leaflet/dist/leaflet.css'
 import './EventDetailsModal.css'
 
-export default function EventDetailsModal({ selectedEvent, user, onClose, onScheduleDeleted }) {
+export default function EventDetailsModal({ selectedEvent, user, onClose, onScheduleDeleted, onRequestLogin, onNavigate }) {
   const [scheduleDeleteState, setScheduleDeleteState] = useState({ id: null, status: '', error: '' })
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export default function EventDetailsModal({ selectedEvent, user, onClose, onSche
       >
         <header className="event-details-header">
           <div>
-            <p className={`event-detail-category event-detail-category--${selectedLocation.category.toLowerCase()}`}>
+            <p className={`event-detail-category event-detail-category--${selectedLocation.category.toLowerCase().replace(/\s+/g, '-')}`}>
               {selectedLocation.category}
             </p>
             <h2 id="event-details-title">{selectedLocation.name}</h2>
@@ -117,6 +118,15 @@ export default function EventDetailsModal({ selectedEvent, user, onClose, onSche
             <strong>Time: </strong>{selectedEvent.startTime ? `${selectedEvent.startTime}` : ''}
             {selectedEvent.endTime ? ` – ${selectedEvent.endTime}` : ''}
           </p>
+        )}
+
+        {selectedLocation.category === 'Community engagement' && selectedLocation.engagementStatus === 'approved' && (
+          <CommunityEngagementActions
+            location={selectedLocation}
+            user={user}
+            onRequestLogin={onRequestLogin}
+            onNavigate={onNavigate}
+          />
         )}
 
         {selectedLocation.category === 'Report' && (

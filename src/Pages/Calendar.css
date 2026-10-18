@@ -307,6 +307,12 @@
   --event-color: #c56b2d;
 }
 
+.calendar-legend-item--community-engagement,
+.calendar-agenda-card--community-engagement,
+.calendar-event--community-engagement {
+  --event-color: #7b5aa6;
+}
+
 .calendar-legend-item--schedule,
 .calendar-agenda-card--schedule,
 .calendar-event--schedule {

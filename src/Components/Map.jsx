@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import BagoAplayaBorder from './BagoAplayaBorder';
 import { bagoAplayaMaxBounds, bagoAplayaMinZoom, isInBagoAplaya } from '../data/bagoAplaya';
 import CategoryDropdown from './CategoryDropdown';
+import CommunityEngagementActions from './CommunityEngagementActions';
 import { categoryIcons, defaultIcon, temporaryLocationIcon } from './mapIcons';
 import {
   categories,
@@ -110,6 +111,7 @@ function FocusLocation({ location }) {
 export default function Map({ user, demoMode, locations, locationsStatus, locationsError, onRequestLogin, focusedMapLocation, onNavigate }) {
   const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' });
   const [saveError, setSaveError] = useState('');
+  const [saveMessage, setSaveMessage] = useState('');
   const [boundaryError, setBoundaryError] = useState('');
   const [boundaryAlert, setBoundaryAlert] = useState('');
   const alertTimeoutRef = useRef(null);
@@ -151,11 +153,21 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   const isAdmin = adminStatus === 'admin';
   const canCreateReports = Boolean(db && user);
   const canCreateMarkers = isAdmin || canCreateReports;
-  const availableCategories = isAdmin ? categories.filter((category) => category !== 'Schedule') : ['Report'];
-  const selectedFormCategory = isAdmin ? formData.category : 'Report';
-  const selectedLocation = locations.find((location) => location.id === selectedLocationId) || null;
+  const availableCategories = isAdmin
+    ? categories.filter((category) => category !== 'Schedule')
+    : ['Report', 'Community engagement'];
+  const selectedFormCategory = isAdmin || availableCategories.includes(formData.category) ? formData.category : 'Report';
+  const selectedLocation = locations.find((location) => location.id === selectedLocationId
+    && (location.category !== 'Community engagement'
+      || isAdmin
+      || location.engagementStatus === 'approved'
+      || location.createdBy === userId)) || null;
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
   const visibleLocations = locations.filter((location) => {
+    if (location.category === 'Community engagement'
+      && !isAdmin
+      && location.engagementStatus !== 'approved'
+      && location.createdBy !== userId) return false;
     const matchesCategory = categoryFilters.length === 0 || categoryFilters.includes(location.category);
     const searchableText = `${location.name} ${location.category} ${location.description}`.toLocaleLowerCase();
     return matchesCategory && (!normalizedSearch || searchableText.includes(normalizedSearch));
@@ -334,6 +346,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   // Saves a new location based on formData
   const handleAddLocation = async (event) => {
     event.preventDefault();
+    setSaveMessage('');
 
     if (!db || !user || !canCreateMarkers || (!selectedPosition && !editingLocationId)
       || !formData.name.trim()) {
@@ -351,6 +364,11 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
       name: formData.name.trim(),
       description: formData.description.trim() || (editingLocationId ? '' : 'New location added by the user.'),
     };
+    if (selectedFormCategory === 'Community engagement' && !editingLocationId) {
+      locationDetails.engagementStatus = isAdmin ? 'approved' : 'pending';
+      locationDetails.engagementReviewedAt = isAdmin ? serverTimestamp() : null;
+      locationDetails.engagementReviewedBy = isAdmin ? user.uid : null;
+    }
     if (selectedFormCategory === 'Location') {
       locationDetails.officeHours = formData.officeHours.trim();
       locationDetails.contactInfo = formData.contactInfo.trim();
@@ -401,6 +419,11 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
         }
 
         await addDoc(collection(db, 'Locations'), newLocation);
+        if (selectedFormCategory === 'Community engagement') {
+          setSaveMessage(isAdmin
+            ? 'Community engagement marker added.'
+            : 'Your engagement marker was submitted and is waiting for admin approval.');
+        }
       }
       setFormData({
         name: '',
@@ -463,7 +486,11 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   };
 
   const handleDeleteLocation = async (location) => {
-    if (!db || !user || adminStatus !== 'admin') return;
+    const canDelete = adminStatus === 'admin'
+      || (location.category === 'Community engagement'
+        && location.createdBy === user?.uid
+        && location.engagementStatus !== 'approved');
+    if (!db || !user || !canDelete) return;
     if (!window.confirm(`Delete "${location.name}"? This cannot be undone.`)) return;
 
     setDeleteFeedback({ locationId: location.id, status: 'deleting', error: '' });
@@ -476,6 +503,30 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
         locationId: location.id,
         status: 'error',
         error: 'This location could not be deleted. Check your admin access and Firestore rules.',
+      });
+    }
+  };
+
+  const handleEngagementReview = async (location, nextStatus) => {
+    if (!db || !user || adminStatus !== 'admin'
+      || location.category !== 'Community engagement'
+      || location.engagementStatus !== 'pending'
+      || !['approved', 'rejected'].includes(nextStatus)) return;
+    if (!window.confirm(`${nextStatus === 'approved' ? 'Approve' : 'Reject'} "${location.name}"?`)) return;
+
+    setReportStatusFeedback({ locationId: location.id, status: 'updating', error: '' });
+    try {
+      await updateDoc(doc(db, 'Locations', location.id), {
+        engagementStatus: nextStatus,
+        engagementReviewedAt: serverTimestamp(),
+        engagementReviewedBy: user.uid,
+      });
+      setReportStatusFeedback({ locationId: null, status: '', error: '' });
+    } catch {
+      setReportStatusFeedback({
+        locationId: location.id,
+        status: 'error',
+        error: 'Community engagement submission could not be reviewed. Check your admin access and Firestore rules.',
       });
     }
   };
@@ -671,7 +722,8 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                   {canCreateMarkers ? (
                     <form className="add-location-form" onSubmit={handleAddLocation}>
                       <h3>{editingLocationId ? 'Edit marker' : 'Add a location'}</h3>
-                      {!isAdmin && <p className="report-access-note">You can submit a report. Other location types are reserved for admins.</p>}
+                      {saveMessage && <p className="map-feedback" role="status">{saveMessage}</p>}
+                      {!isAdmin && <p className="report-access-note">Submit a report or suggest a Community engagement marker. Engagement markers stay hidden until an admin approves them.</p>}
                       {!editingLocationId && (
                         selectedPosition ? (
                           <p className="map-feedback">Pin placed inside Bago Aplaya ({selectedPosition.lat.toFixed(5)}, {selectedPosition.lng.toFixed(5)}).</p>
@@ -693,7 +745,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
 
                       <label>
                         Category
-                        <select name="category" value={selectedFormCategory} onChange={handleInputChange} disabled={!isAdmin || Boolean(editingLocationId)}>
+                        <select name="category" value={selectedFormCategory} onChange={handleInputChange} disabled={Boolean(editingLocationId)}>
                           {availableCategories.map((category) => (
                             <option key={category} value={category}>{category}</option>
                           ))}
@@ -738,6 +790,10 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                           </>
                         )}
 
+                      {selectedFormCategory === 'Community engagement' && (
+                        <p className="map-feedback">Your marker will be reviewed by an admin before it appears publicly.</p>
+                      )}
+
                       <label>
                         {selectedFormCategory === 'Hazard' ? 'Warning and instructions' : 'Description'}
                         <textarea
@@ -780,7 +836,13 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
 
                       <button type="submit" disabled={((!selectedPosition || !isInBagoAplaya(selectedPosition)) && !editingLocationId)
                         || !formData.name.trim() || isSaving}>
-                        {isSaving ? (isAdmin ? 'Saving…' : 'Submitting report…') : editingLocationId ? 'Save changes' : isAdmin ? 'Add Location' : 'Submit Report'}
+                        {isSaving
+                          ? (isAdmin ? 'Saving…' : 'Submitting…')
+                          : editingLocationId
+                            ? 'Save changes'
+                            : selectedFormCategory === 'Community engagement'
+                              ? 'Submit engagement marker'
+                              : isAdmin ? 'Add Location' : 'Submit Report'}
                       </button>
                       {editingLocationId && <button className="map-danger-button" type="button" onClick={handleCancelEdit}>Cancel edit</button>}
                       {saveError && <p className="map-feedback map-feedback--error" role="alert">{saveError}</p>}
@@ -845,6 +907,52 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                         </dl>
                       )}
                       {selectedLocation.createdBy && <p className="marker-details-by">Added by account: {selectedLocation.createdBy}</p>}
+
+                      {selectedLocation.category === 'Community engagement' && (
+                        <>
+                          <p className="map-feedback" role="status">
+                            {selectedLocation.engagementStatus === 'pending'
+                              ? 'Pending admin approval'
+                              : selectedLocation.engagementStatus === 'rejected'
+                                ? 'This submission was not approved'
+                                : 'Approved community engagement activity'}
+                          </p>
+                          {selectedLocation.engagementStatus === 'approved' && (
+                            <CommunityEngagementActions
+                              location={selectedLocation}
+                              user={user}
+                              isAdmin={isAdmin}
+                              onRequestLogin={onRequestLogin}
+                              onNavigate={onNavigate}
+                            />
+                          )}
+                          {isAdmin && selectedLocation.engagementStatus === 'pending' && (
+                            <div className="marker-details-admin-actions">
+                              <button
+                                type="button"
+                                onClick={() => handleEngagementReview(selectedLocation, 'approved')}
+                                disabled={reportStatusFeedback.status === 'updating'}
+                              >Approve marker</button>
+                              <button
+                                type="button"
+                                onClick={() => handleEngagementReview(selectedLocation, 'rejected')}
+                                disabled={reportStatusFeedback.status === 'updating'}
+                              >Reject marker</button>
+                              {reportStatusFeedback.locationId === selectedLocation.id && reportStatusFeedback.error && (
+                                <p className="popup-delete-error" role="alert">{reportStatusFeedback.error}</p>
+                              )}
+                            </div>
+                          )}
+                          {selectedLocation.createdBy === user?.uid && selectedLocation.engagementStatus !== 'approved' && (
+                            <button
+                              className="map-danger-button"
+                              type="button"
+                              onClick={() => handleDeleteLocation(selectedLocation)}
+                              disabled={deleteFeedback.locationId === selectedLocation.id && deleteFeedback.status === 'deleting'}
+                            >Delete my submission</button>
+                          )}
+                        </>
+                      )}
 
                       <div className="marker-details-actions">
                         <button type="button" onClick={() => handleStartRoute(selectedLocation)}>Directions from here</button>

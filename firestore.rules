@@ -24,12 +24,13 @@ service cloud.firestore {
           'name', 'category', 'description', 'lat', 'lng',
           'startDate', 'startTime', 'endDate', 'endTime',
           'createdBy', 'createdAt', 'status', 'officeHours', 'contactInfo', 'underReviewAt',
-          'underReviewBy', 'resolvedAt', 'resolvedBy', 'hazardRadius', 'updatedAt'
+          'underReviewBy', 'resolvedAt', 'resolvedBy', 'hazardRadius', 'updatedAt',
+          'engagementStatus', 'engagementReviewedAt', 'engagementReviewedBy'
         ])
         && data.name is string
         && data.name.size() > 0
         && data.name.size() <= 120
-        && data.category in ['Location', 'Outage', 'Service', 'Marketplace', 'Garden', 'Event', 'Report', 'Hazard', 'Evacuation', 'Relief']
+        && data.category in ['Location', 'Outage', 'Service', 'Marketplace', 'Garden', 'Event', 'Community engagement', 'Report', 'Hazard', 'Evacuation', 'Relief']
         && data.description is string
         && data.description.size() <= 1000
         && (!data.keys().hasAny(['officeHours']) || (data.officeHours is string && data.officeHours.size() <= 500))
@@ -53,6 +54,13 @@ service cloud.firestore {
         && (!data.keys().hasAny(['underReviewAt']) || data.underReviewAt == null || data.underReviewAt is timestamp)
         && (!data.keys().hasAny(['underReviewBy']) || data.underReviewBy == null || data.underReviewBy is string)
         && (!data.keys().hasAny(['status']) || data.status == null || data.status in ['Submitted', 'Under review', 'Resolved'])
+        && (data.category == 'Community engagement'
+          ? data.keys().hasAll(['engagementStatus', 'engagementReviewedAt', 'engagementReviewedBy'])
+            && data.engagementStatus in ['pending', 'approved', 'rejected']
+            && (data.engagementStatus == 'pending'
+              ? data.engagementReviewedAt == null && data.engagementReviewedBy == null
+              : data.engagementReviewedAt is timestamp && data.engagementReviewedBy is string && data.engagementReviewedBy.size() > 0)
+          : !data.keys().hasAny(['engagementStatus', 'engagementReviewedAt', 'engagementReviewedBy']))
         && data.createdBy is string
         && data.createdAt is timestamp;
     }
@@ -74,6 +82,21 @@ service cloud.firestore {
           && after.get('resolvedBy', '') == request.auth.uid
           && after.get('underReviewAt', null) == before.get('underReviewAt', null)
           && after.get('underReviewBy', null) == before.get('underReviewBy', null)
+        );
+    }
+
+    function validEngagementReviewTransition(before, after) {
+      return before.get('category', '') != 'Community engagement'
+        || (
+          before.get('engagementStatus', '') == after.get('engagementStatus', '')
+          && before.get('engagementReviewedAt', null) == after.get('engagementReviewedAt', null)
+          && before.get('engagementReviewedBy', null) == after.get('engagementReviewedBy', null)
+        )
+        || (
+          before.get('engagementStatus', '') == 'pending'
+          && after.get('engagementStatus', '') in ['approved', 'rejected']
+          && after.get('engagementReviewedAt', null) == request.time
+          && after.get('engagementReviewedBy', '') == request.auth.uid
         );
     }
 
@@ -156,7 +179,10 @@ service cloud.firestore {
     }
 
     match /Locations/{locationId} {
-      allow read: if true;
+      allow read: if resource.data.category != 'Community engagement'
+        || resource.data.engagementStatus == 'approved'
+        || isAdmin()
+        || (request.auth != null && resource.data.createdBy == request.auth.uid);
       allow create: if request.auth != null
         && validLocation(request.resource.data)
         && request.resource.data.createdBy == request.auth.uid
@@ -169,7 +195,11 @@ service cloud.firestore {
             && request.resource.data.underReviewBy == null
             && request.resource.data.resolvedAt == null
             && request.resource.data.resolvedBy == null))
-        && (isAdmin() || request.resource.data.category == 'Report');
+        && (request.resource.data.category != 'Community engagement'
+          || (isAdmin()
+            ? request.resource.data.engagementStatus in ['pending', 'approved']
+            : request.resource.data.engagementStatus == 'pending'))
+        && (isAdmin() || request.resource.data.category in ['Report', 'Community engagement']);
       allow update: if isAdmin()
         && validLocation(request.resource.data)
         && request.resource.data.category == resource.data.category
@@ -177,8 +207,52 @@ service cloud.firestore {
         && request.resource.data.createdAt == resource.data.createdAt
         && (resource.data.category != 'Hazard'
           || request.resource.data.get('updatedAt', null) == request.time)
-        && validReportStatusTransition(resource.data, request.resource.data);
-      allow delete: if isAdmin();
+        && validReportStatusTransition(resource.data, request.resource.data)
+        && validEngagementReviewTransition(resource.data, request.resource.data);
+      allow delete: if isAdmin()
+        || (request.auth != null
+          && resource.data.category == 'Community engagement'
+          && resource.data.createdBy == request.auth.uid
+          && resource.data.engagementStatus in ['pending', 'rejected']);
+    }
+
+    function validCommunityEngagementSignup(data, signupId) {
+      let volunteerPath = /databases/$(database)/documents/VolunteerSignups/$(request.auth.uid);
+      let locationPath = /databases/$(database)/documents/Locations/$(data.markerId);
+      return data.keys().hasAll(['markerId', 'markerName', 'userId', 'name', 'contact', 'methods', 'notes', 'createdAt'])
+        && data.keys().hasOnly(['markerId', 'markerName', 'userId', 'name', 'contact', 'methods', 'notes', 'createdAt'])
+        && data.markerId is string
+        && signupId == data.markerId + '_' + request.auth.uid
+        && data.markerName is string
+        && data.userId == request.auth.uid
+        && data.name is string
+        && data.contact is string
+        && data.methods is list
+        && data.methods.size() > 0
+        && data.methods.size() <= 7
+        && data.notes is string
+        && data.createdAt == request.time
+        && exists(volunteerPath)
+        && data.name == get(volunteerPath).data.name
+        && data.contact == get(volunteerPath).data.contact
+        && data.methods == get(volunteerPath).data.methods
+        && data.notes == get(volunteerPath).data.notes
+        && exists(locationPath)
+        && get(locationPath).data.category == 'Community engagement'
+        && get(locationPath).data.engagementStatus == 'approved'
+        && data.markerName == get(locationPath).data.name;
+    }
+
+    match /CommunityEngagementSignups/{signupId} {
+      allow read: if request.auth != null
+        && (isAdmin()
+          || signupId.matches('.*_' + request.auth.uid + '$')
+          || resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null
+        && validCommunityEngagementSignup(request.resource.data, signupId);
+      allow update: if false;
+      allow delete: if request.auth != null
+        && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     match /Schedules/{scheduleId} {

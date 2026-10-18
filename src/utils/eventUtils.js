@@ -76,6 +76,8 @@ export function getLocationEvents(locations, schedules = []) {
   const events = []
 
   locations.forEach((location) => {
+    if (location.category === 'Community engagement' && location.engagementStatus !== 'approved') return
+
     if (scheduledCategories.includes(location.category)) {
       const startDate = location.startDate || location.endDate
       const endDate = location.endDate || location.startDate

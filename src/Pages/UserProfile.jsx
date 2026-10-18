@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { doc, onSnapshot, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import CommunityParticipationForms from '../Components/CommunityParticipationForms'
+import MyCommunityEngagementSignups from '../Components/MyCommunityEngagementSignups'
 import './UserProfile.css'
 
 const languages = [
@@ -245,6 +246,7 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
             isSavingProfile={saveStatus === 'saving'}
           />
         )}
+        {profile.status === 'ready' && <MyCommunityEngagementSignups user={user} />}
       </div>
     </main>
   )

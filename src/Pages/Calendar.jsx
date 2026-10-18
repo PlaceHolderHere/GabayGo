@@ -22,6 +22,8 @@ export default function Calendar({
   schedules = [],
   schedulesStatus,
   schedulesError,
+  onNavigate,
+  onRequestLogin,
 }) {
   const [currentTime, setCurrentTime] = useState(() => Date.now())
   const [visibleMonth, setVisibleMonth] = useState(() => {
@@ -296,7 +298,7 @@ export default function Calendar({
           <div className="calendar-legend" aria-label="Event categories">
             <span className="calendar-legend-label">Categories:</span>
             {calendarCategories.map((category) => (
-              <span className={`calendar-legend-item calendar-legend-item--${category.toLowerCase()}`} key={category}>
+              <span className={`calendar-legend-item calendar-legend-item--${category.toLowerCase().replace(/\s+/g, '-')}`} key={category}>
                 <i aria-hidden="true" />{category}
               </span>
             ))}
@@ -354,7 +356,7 @@ export default function Calendar({
                   <div className="calendar-week-event-layer">
                     {segments.map(({ event, startIndex, endIndex, lane, continuesBefore, continuesAfter }) => (
                       <button
-                        className={`calendar-event calendar-event--${event.category.toLowerCase()} calendar-event--${event.kind}${continuesBefore ? ' calendar-event--continues-before' : ''}${continuesAfter ? ' calendar-event--continues-after' : ''}`}
+                        className={`calendar-event calendar-event--${event.category.toLowerCase().replace(/\s+/g, '-')} calendar-event--${event.kind}${continuesBefore ? ' calendar-event--continues-before' : ''}${continuesAfter ? ' calendar-event--continues-after' : ''}`}
                         key={`${event.id}-${week[0].key}`}
                         style={{
                           left: `calc(${startIndex * 100 / 7}% + 3px)`,
@@ -383,6 +385,8 @@ export default function Calendar({
           selectedEvent={selectedEvent}
           user={user}
           onClose={() => setSelectedEventId(null)}
+          onRequestLogin={onRequestLogin}
+          onNavigate={onNavigate}
         />
       )}
     </main>
