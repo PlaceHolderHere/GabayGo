@@ -576,9 +576,21 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
               >
                 Create
               </button>
+              <button
+                className={activePanelTab === 'info' ? 'sidebar-tab sidebar-tab--active' : 'sidebar-tab'}
+                type="button"
+                onClick={() => setActivePanelTab('info')}
+                aria-pressed={activePanelTab === 'info'}
+              >
+                Info
+              </button>
             </div>
 
-            <div className="sidebar-view" aria-label={activePanelTab === 'search' ? 'Search locations' : 'Create a location'}>
+            <div className="sidebar-view" aria-label={
+              activePanelTab === 'search' ? 'Search locations' :
+                activePanelTab === 'create' ? 'Create a location' :
+                  'Location details'
+            }>
               {activePanelTab === 'search' && (
                 <>
                   {routeState && (
@@ -806,108 +818,105 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                   )}
                 </>
               )}
+
+              {activePanelTab === 'info' && (
+                <>
+                  {selectedLocation && !editingLocationId ? (
+                    <div className="marker-details-inline" aria-label={`Details for ${selectedLocation.name}`}>
+                      <header className="marker-details-header">
+                        <div>
+                          <h2>{selectedLocation.name}</h2>
+                          <p className="map-subtitle">{selectedLocation.category}</p>
+                        </div>
+                      </header>
+
+                      {selectedLocation.description && (
+                        <p className={selectedLocation.category === 'Hazard' ? 'marker-details-warning' : 'marker-details-description'}>
+                          {selectedLocation.category === 'Hazard' && <strong>Warning: </strong>}
+                          {selectedLocation.description}
+                        </p>
+                      )}
+                      {selectedLocation.category === 'Hazard' && (
+                        <dl className="marker-details-facts">
+                          <div><dt>Coverage radius</dt><dd>{selectedLocation.hazardRadius || defaultHazardRadius} m</dd></div>
+                          <div><dt>Last updated</dt><dd>{formatUrgentUpdatedAt(selectedLocation)}</dd></div>
+                        </dl>
+                      )}
+                      {selectedLocation.category === 'Location' && (selectedLocation.officeHours || selectedLocation.contactInfo) && (
+                        <dl className="marker-details-facts">
+                          {selectedLocation.officeHours && <div><dt>Office hours</dt><dd>{selectedLocation.officeHours}</dd></div>}
+                          {selectedLocation.contactInfo && <div><dt>Contact</dt><dd>{selectedLocation.contactInfo}</dd></div>}
+                        </dl>
+                      )}
+                      {timeSensitiveCategories.includes(selectedLocation.category) && (
+                        <dl className="marker-details-facts">
+                          <div><dt>Date</dt><dd>{selectedLocation.startDate || 'Not specified'}{selectedLocation.endDate ? ` – ${selectedLocation.endDate}` : ''}</dd></div>
+                          <div><dt>Time</dt><dd>{selectedLocation.startTime || 'Not specified'}{selectedLocation.endTime ? ` – ${selectedLocation.endTime}` : ''}</dd></div>
+                        </dl>
+                      )}
+                      {timeStampedCategories.includes(selectedLocation.category) && (
+                        <dl className="marker-details-facts">
+                          <div><dt>Opened</dt><dd>{selectedLocation.startDate || 'Not specified'}</dd></div>
+                          <div><dt>Status</dt><dd>{selectedLocation.status || (selectedLocation.resolvedAt ? 'Resolved' : 'Submitted')}</dd></div>
+                          {selectedLocation.resolvedAt && <div><dt>Resolved</dt><dd>{selectedLocation.resolvedAt.toDate().toLocaleString()}</dd></div>}
+                        </dl>
+                      )}
+                      {selectedLocation.createdBy && <p className="marker-details-by">Added by account: {selectedLocation.createdBy}</p>}
+
+                      <div className="marker-details-actions">
+                        <button type="button" onClick={() => handleStartRoute(selectedLocation)}>Directions from here</button>
+                        <button type="button" onClick={() => handleStartRouteFromCurrentLocation(selectedLocation)}>Directions from my location</button>
+                      </div>
+
+                      {isAdmin && selectedLocation.category === 'Report' && (
+                        <div className="marker-details-actions">
+                          {(selectedLocation.status || (selectedLocation.resolvedAt ? 'Resolved' : 'Submitted')) === 'Submitted' && (
+                            <button
+                              type="button"
+                              onClick={() => handleReportStatusChange(selectedLocation, 'Under review')}
+                              disabled={reportStatusFeedback.locationId === selectedLocation.id && reportStatusFeedback.status === 'updating'}
+                            >Mark under review</button>
+                          )}
+                          {(selectedLocation.status || (selectedLocation.resolvedAt ? 'Resolved' : 'Submitted')) === 'Under review' && (
+                            <button
+                              type="button"
+                              onClick={() => handleReportStatusChange(selectedLocation, 'Resolved')}
+                              disabled={reportStatusFeedback.locationId === selectedLocation.id && reportStatusFeedback.status === 'updating'}
+                            >Mark resolved</button>
+                          )}
+                          {reportStatusFeedback.locationId === selectedLocation.id && reportStatusFeedback.error && (
+                            <p className="popup-delete-error" role="alert">{reportStatusFeedback.error}</p>
+                          )}
+                        </div>
+                      )}
+
+                      {isAdmin && (
+                        <div className="marker-details-admin-actions">
+                          <button type="button" onClick={() => handleEditLocation(selectedLocation)}>Edit marker</button>
+                          <button
+                            className="popup-delete-button map-danger-button"
+                            type="button"
+                            onClick={() => handleDeleteLocation(selectedLocation)}
+                            disabled={deleteFeedback.locationId === selectedLocation.id && deleteFeedback.status === 'deleting'}
+                          >
+                            {deleteFeedback.locationId === selectedLocation.id && deleteFeedback.status === 'deleting' ? 'Deleting…' : 'Delete location'}
+                          </button>
+                          {deleteFeedback.locationId === selectedLocation.id && deleteFeedback.error && (
+                            <p className="popup-delete-error" role="alert">{deleteFeedback.error}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="map-feedback" role="status">Click a marker on the map to view its details here.</p>
+                  )}
+                </>
+              )}
             </div>
           </aside>
         )}
 
-        {selectedLocation && !editingLocationId && (
-          <aside className="marker-details-panel" aria-label={`Details for ${selectedLocation.name}`}>
-            <header className="marker-details-header">
-              <div>
-                <p className="map-eyebrow">{selectedLocation.category}</p>
-                <h2>{selectedLocation.name}</h2>
-              </div>
-              <button
-                className="marker-details-close"
-                type="button"
-                aria-label="Close location details"
-                onClick={() => {
-                  setSelectedLocationId(null);
-                  setSelectedHazardId(null);
-                }}
-              >
-                ×
-              </button>
-            </header>
 
-            {selectedLocation.description && (
-              <p className={selectedLocation.category === 'Hazard' ? 'marker-details-warning' : 'marker-details-description'}>
-                {selectedLocation.category === 'Hazard' && <strong>Warning: </strong>}
-                {selectedLocation.description}
-              </p>
-            )}
-            {selectedLocation.category === 'Hazard' && (
-              <dl className="marker-details-facts">
-                <div><dt>Coverage radius</dt><dd>{selectedLocation.hazardRadius || defaultHazardRadius} m</dd></div>
-                <div><dt>Last updated</dt><dd>{formatUrgentUpdatedAt(selectedLocation)}</dd></div>
-              </dl>
-            )}
-            {selectedLocation.category === 'Location' && (selectedLocation.officeHours || selectedLocation.contactInfo) && (
-              <dl className="marker-details-facts">
-                {selectedLocation.officeHours && <div><dt>Office hours</dt><dd>{selectedLocation.officeHours}</dd></div>}
-                {selectedLocation.contactInfo && <div><dt>Contact</dt><dd>{selectedLocation.contactInfo}</dd></div>}
-              </dl>
-            )}
-            {timeSensitiveCategories.includes(selectedLocation.category) && (
-              <dl className="marker-details-facts">
-                <div><dt>Date</dt><dd>{selectedLocation.startDate || 'Not specified'}{selectedLocation.endDate ? ` – ${selectedLocation.endDate}` : ''}</dd></div>
-                <div><dt>Time</dt><dd>{selectedLocation.startTime || 'Not specified'}{selectedLocation.endTime ? ` – ${selectedLocation.endTime}` : ''}</dd></div>
-              </dl>
-            )}
-            {timeStampedCategories.includes(selectedLocation.category) && (
-              <dl className="marker-details-facts">
-                <div><dt>Opened</dt><dd>{selectedLocation.startDate || 'Not specified'}</dd></div>
-                <div><dt>Status</dt><dd>{selectedLocation.status || (selectedLocation.resolvedAt ? 'Resolved' : 'Submitted')}</dd></div>
-                {selectedLocation.resolvedAt && <div><dt>Resolved</dt><dd>{selectedLocation.resolvedAt.toDate().toLocaleString()}</dd></div>}
-              </dl>
-            )}
-            {selectedLocation.createdBy && <p className="marker-details-by">Added by account: {selectedLocation.createdBy}</p>}
-
-            <div className="marker-details-actions">
-              <button type="button" onClick={() => handleStartRoute(selectedLocation)}>Directions from here</button>
-              <button type="button" onClick={() => handleStartRouteFromCurrentLocation(selectedLocation)}>Directions from my location</button>
-            </div>
-
-            {isAdmin && selectedLocation.category === 'Report' && (
-              <div className="marker-details-actions">
-                {(selectedLocation.status || (selectedLocation.resolvedAt ? 'Resolved' : 'Submitted')) === 'Submitted' && (
-                  <button
-                    type="button"
-                    onClick={() => handleReportStatusChange(selectedLocation, 'Under review')}
-                    disabled={reportStatusFeedback.locationId === selectedLocation.id && reportStatusFeedback.status === 'updating'}
-                  >Mark under review</button>
-                )}
-                {(selectedLocation.status || (selectedLocation.resolvedAt ? 'Resolved' : 'Submitted')) === 'Under review' && (
-                  <button
-                    type="button"
-                    onClick={() => handleReportStatusChange(selectedLocation, 'Resolved')}
-                    disabled={reportStatusFeedback.locationId === selectedLocation.id && reportStatusFeedback.status === 'updating'}
-                  >Mark resolved</button>
-                )}
-                {reportStatusFeedback.locationId === selectedLocation.id && reportStatusFeedback.error && (
-                  <p className="popup-delete-error" role="alert">{reportStatusFeedback.error}</p>
-                )}
-              </div>
-            )}
-
-            {isAdmin && (
-              <div className="marker-details-admin-actions">
-                <button type="button" onClick={() => handleEditLocation(selectedLocation)}>Edit marker</button>
-                <button
-                  className="popup-delete-button map-danger-button"
-                  type="button"
-                  onClick={() => handleDeleteLocation(selectedLocation)}
-                  disabled={deleteFeedback.locationId === selectedLocation.id && deleteFeedback.status === 'deleting'}
-                >
-                  {deleteFeedback.locationId === selectedLocation.id && deleteFeedback.status === 'deleting' ? 'Deleting…' : 'Delete location'}
-                </button>
-                {deleteFeedback.locationId === selectedLocation.id && deleteFeedback.error && (
-                  <p className="popup-delete-error" role="alert">{deleteFeedback.error}</p>
-                )}
-              </div>
-            )}
-          </aside>
-        )}
 
         <div className="map-container">
           <MapContainer
@@ -1010,7 +1019,8 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                   click: () => {
                     setSelectedLocationId(location.id);
                     setSelectedHazardId(location.category === 'Hazard' ? location.id : null);
-                    setPanelOpen(false);
+                    setActivePanelTab('info');
+                    setPanelOpen(true);
                     setRouteState(null);
                   },
                 }}
