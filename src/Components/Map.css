@@ -877,6 +877,76 @@
   top: 5px;
 }
 
+/* Boundary Warning Toast Alert */
+.map-boundary-toast {
+  position: absolute;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1080;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 1.1rem;
+  background: var(--color-cream);
+  border: 1px solid #b93824;
+  border-left: 4px solid #b93824;
+  border-radius: 6px;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--color-brown) 24%, transparent);
+  color: var(--color-brown);
+  font-size: 0.82rem;
+  font-weight: 600;
+  pointer-events: auto;
+  animation: mapToastSlideDown 0.22s ease-out both;
+  max-width: min(90vw, 480px);
+}
+
+@keyframes mapToastSlideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.map-boundary-toast-icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.map-boundary-toast-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  margin-left: 0.35rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-brown);
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+}
+
+.map-boundary-toast-close:hover {
+  background-color: var(--color-sand);
+}
+
+.popup-card--boundary-warning {
+  padding: 0.2rem 0;
+  max-width: 220px;
+}
+
 @media (max-width: 860px) {
   .map-page {
     height: calc(100vh - var(--nav-height, 0px));

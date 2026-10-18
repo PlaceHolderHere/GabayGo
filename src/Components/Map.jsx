@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import BagoAplayaBorder from './BagoAplayaBorder';
-import { bagoAplayaMaxBounds, bagoAplayaMinZoom } from '../data/bagoAplaya';
+import { bagoAplayaMaxBounds, bagoAplayaMinZoom, isInBagoAplaya } from '../data/bagoAplaya';
 import CategoryDropdown from './CategoryDropdown';
 import { categoryIcons, defaultIcon, temporaryLocationIcon } from './mapIcons';
 import {
@@ -110,6 +110,9 @@ function FocusLocation({ location }) {
 export default function Map({ user, demoMode, locations, locationsStatus, locationsError, onRequestLogin, focusedMapLocation, onNavigate }) {
   const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' });
   const [saveError, setSaveError] = useState('');
+  const [boundaryError, setBoundaryError] = useState('');
+  const [boundaryAlert, setBoundaryAlert] = useState('');
+  const alertTimeoutRef = useRef(null);
   const [deleteFeedback, setDeleteFeedback] = useState({ locationId: null, status: '', error: '' });
   const [reportStatusFeedback, setReportStatusFeedback] = useState({ locationId: null, status: '', error: '' });
   const [isSaving, setIsSaving] = useState(false);
@@ -223,6 +226,14 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   const handleMapClick = (latlng) => {
     if (routeState) {
       if (routeState.status === 'selecting') {
+        if (!isInBagoAplaya(latlng)) {
+          setRouteState((current) => ({
+            ...current,
+            status: 'error',
+            error: 'Destination must be within Bago Aplaya.',
+          }));
+          return;
+        }
         setRouteState((current) => ({
           ...current,
           destination: { lat: latlng.lat, lng: latlng.lng, name: 'Map point' },
@@ -236,6 +247,18 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
     setSelectedHazardId(null);
     setSelectedLocationId(null);
     if (!canCreateMarkers) return;
+
+    if (!isInBagoAplaya(latlng)) {
+      setBoundaryAlert('Locations can only be placed within the Bago Aplaya boundary.');
+      if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
+      alertTimeoutRef.current = setTimeout(() => {
+        setBoundaryAlert('');
+      }, 3000);
+      return;
+    }
+
+    setBoundaryAlert('');
+    setBoundaryError('');
     setSelectedPosition(latlng);
     setActivePanelTab('create');
     setPanelOpen(true);
@@ -316,6 +339,13 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
     if (!db || !user || !canCreateMarkers || (!selectedPosition && !editingLocationId && !isSchedule)
       || !formData.name.trim() || (isSchedule && !formData.startDate)) {
       return;
+    }
+
+    if (!isSchedule && !editingLocationId) {
+      if (!selectedPosition || !isInBagoAplaya(selectedPosition)) {
+        setSaveError('Locations can only be placed within the Bago Aplaya boundary.');
+        return;
+      }
     }
 
     const locationDetails = {
@@ -427,6 +457,9 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
 
   const handleCancelEdit = () => {
     setEditingLocationId(null);
+    setSelectedPosition(null);
+    setBoundaryError('');
+    setSaveError('');
     setPanelOpen(false);
     setFormData({
       name: '',
@@ -493,6 +526,20 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   return (
     <div className="map-page">
       <div className="map-stage" id="map">
+        {boundaryAlert && (
+          <div className="map-boundary-toast" role="alert">
+            <span className="map-boundary-toast-icon" aria-hidden="true">⚠️</span>
+            <span>{boundaryAlert}</span>
+            <button
+              type="button"
+              className="map-boundary-toast-close"
+              onClick={() => setBoundaryAlert('')}
+              aria-label="Dismiss notification"
+            >
+              ×
+            </button>
+          </div>
+        )}
         <button
           className={`map-panel-toggle${panelOpen ? ' map-panel-toggle--panel-open' : ''}${editingLocationId ? ' map-panel-toggle--editing' : ''}`}
           type="button"
@@ -626,6 +673,14 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                     <form className="add-location-form" onSubmit={handleAddLocation}>
                       <h3>{editingLocationId ? 'Edit marker' : 'Add a location'}</h3>
                       {!isAdmin && <p className="report-access-note">You can submit a report. Other location types are reserved for admins.</p>}
+                      {selectedFormCategory !== 'Schedule' && !editingLocationId && (
+                        selectedPosition ? (
+                          <p className="map-feedback">Pin placed inside Bago Aplaya ({selectedPosition.lat.toFixed(5)}, {selectedPosition.lng.toFixed(5)}).</p>
+                        ) : (
+                          <p className="map-feedback">Click on the map inside Bago Aplaya to place your pin.</p>
+                        )
+                      )}
+                      {boundaryError && <p className="map-feedback map-feedback--error" role="alert">{boundaryError}</p>}
                       <label>
                         Name
                         <input
@@ -728,7 +783,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                         </>
                       )}
 
-                      <button type="submit" disabled={((selectedFormCategory !== 'Schedule' && !selectedPosition && !editingLocationId)
+                      <button type="submit" disabled={((selectedFormCategory !== 'Schedule' && (!selectedPosition || !isInBagoAplaya(selectedPosition)) && !editingLocationId)
                         || !formData.name.trim() || (selectedFormCategory === 'Schedule' && !formData.startDate) || isSaving)}>
                         {isSaving ? (isAdmin ? 'Saving…' : 'Submitting report…') : editingLocationId ? 'Save changes' : selectedFormCategory === 'Schedule' ? 'Add Schedule' : isAdmin ? 'Add Location' : 'Submit Report'}
                       </button>
