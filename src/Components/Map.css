@@ -648,6 +648,104 @@
   min-height: 0;
 }
 
+/* Leaflet Zoom Control Styling */
+.leaflet-control-zoom {
+  border: 1px solid var(--color-line) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--color-brown) 18%, transparent) !important;
+  background: var(--color-cream) !important;
+  margin: 1rem !important;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* Offset controls when the side panel is open */
+.map-stage:has(.map-panel:not(.map-panel--editing)) .leaflet-top.leaflet-left {
+  left: calc(var(--map-panel-width) + 1.25rem);
+}
+
+.leaflet-top.leaflet-left {
+  transition: left 0.25s ease;
+}
+
+.leaflet-control-zoom.leaflet-bar {
+  border: 1px solid var(--color-line);
+}
+
+.leaflet-control-zoom a {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 1 !important;
+  background-color: var(--color-cream) !important;
+  color: var(--color-brown) !important;
+  font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  text-indent: 0 !important;
+  border: none !important;
+  border-bottom: 1px solid var(--color-line) !important;
+  text-decoration: none !important;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease !important;
+}
+
+.leaflet-control-zoom a span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  user-select: none;
+}
+
+.leaflet-control-zoom a:last-child {
+  border-bottom: none !important;
+}
+
+.leaflet-control-zoom a:hover:not(.leaflet-disabled) {
+  background-color: var(--color-sand) !important;
+  color: var(--color-brown) !important;
+}
+
+.leaflet-control-zoom a:active:not(.leaflet-disabled) {
+  background-color: color-mix(in srgb, var(--color-gold) 35%, var(--color-sand)) !important;
+}
+
+.leaflet-control-zoom a:focus-visible {
+  outline: 2px solid var(--color-gold) !important;
+  outline-offset: -2px !important;
+  z-index: 2;
+}
+
+.leaflet-control-zoom a.leaflet-disabled {
+  background-color: var(--color-cream) !important;
+  color: var(--color-muted) !important;
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+}
+
+/* Leaflet Attribution Bar */
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--color-cream) 88%, transparent) !important;
+  backdrop-filter: blur(4px);
+  color: var(--color-muted) !important;
+  font-size: 0.65rem !important;
+  padding: 3px 8px !important;
+  border-radius: 4px 0 0 0;
+  border-top: 1px solid var(--color-line);
+  border-left: 1px solid var(--color-line);
+}
+
+.leaflet-control-attribution a {
+  color: var(--color-brown) !important;
+  text-decoration: none;
+}
+
+.leaflet-control-attribution a:hover {
+  text-decoration: underline;
+}
+
 .popup-card {
   display: flex;
   flex-direction: column;
