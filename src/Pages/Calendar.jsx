@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
+import { addDoc, collection, doc, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import { CalendarPlus, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
+import { db, demoMode } from '../firebase'
 import CategoryDropdown from '../Components/CategoryDropdown'
 import EventDetailsModal from '../Components/EventDetailsModal'
 import {
@@ -30,6 +32,40 @@ export default function Calendar({
   const [selectedEventId, setSelectedEventId] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilters, setCategoryFilters] = useState([])
+  const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' })
+  const [isCreateFormOpen, setIsCreateFormOpen] = useState(false)
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false)
+  const [scheduleSaveError, setScheduleSaveError] = useState('')
+  const [scheduleForm, setScheduleForm] = useState({
+    name: '',
+    description: '',
+    startDate: '',
+    startTime: '',
+    endDate: '',
+    endTime: '',
+  })
+
+  const isDemoAdmin = demoMode && user?.isAnonymous === true
+  const adminStatus = !db
+    ? 'unavailable'
+    : !user
+      ? 'signed-out'
+      : isDemoAdmin
+        ? 'admin'
+        : adminCheck.uid === user.uid ? adminCheck.status : 'checking'
+
+  useEffect(() => {
+    if (!db || !user?.uid || isDemoAdmin) return undefined
+
+    return onSnapshot(doc(db, 'admin', user.uid), (adminDoc) => {
+      setAdminCheck({
+        uid: user.uid,
+        status: adminDoc.exists() && adminDoc.data().enabled === true ? 'admin' : 'not-admin',
+      })
+    }, () => {
+      setAdminCheck({ uid: user.uid, status: 'error' })
+    })
+  }, [user?.uid, isDemoAdmin])
 
   useEffect(() => {
     const interval = window.setInterval(() => setCurrentTime(Date.now()), 60_000)
@@ -84,6 +120,45 @@ export default function Calendar({
     setCategoryFilters([])
   }
 
+  const handleScheduleInputChange = (event) => {
+    const { name, value } = event.target
+    setScheduleForm((form) => ({ ...form, [name]: value }))
+  }
+
+  const handleCreateSchedule = async (event) => {
+    event.preventDefault()
+    if (!db || !user || adminStatus !== 'admin' || !scheduleForm.name.trim() || !scheduleForm.startDate) return
+
+    setIsSavingSchedule(true)
+    setScheduleSaveError('')
+    try {
+      await addDoc(collection(db, 'Schedules'), {
+        category: 'Schedule',
+        name: scheduleForm.name.trim(),
+        description: scheduleForm.description.trim(),
+        startDate: scheduleForm.startDate,
+        startTime: scheduleForm.startTime,
+        endDate: scheduleForm.endDate || scheduleForm.startDate,
+        endTime: scheduleForm.endTime,
+        createdBy: user.uid,
+        createdAt: serverTimestamp(),
+      })
+      setScheduleForm({
+        name: '',
+        description: '',
+        startDate: '',
+        startTime: '',
+        endDate: '',
+        endTime: '',
+      })
+      setIsCreateFormOpen(false)
+    } catch {
+      setScheduleSaveError('Schedule could not be saved. Check your admin access and Firestore rules.')
+    } finally {
+      setIsSavingSchedule(false)
+    }
+  }
+
   return (
     <main className="calendar-page">
       <div className="calendar-container">
@@ -92,7 +167,73 @@ export default function Calendar({
             <h1>Calendar</h1>
             <p className="calendar-subtitle">Browse scheduled events, outages, collections, and activities by date.</p>
           </div>
+          {adminStatus === 'admin' && (
+            <button
+              className="calendar-create-button"
+              type="button"
+              aria-expanded={isCreateFormOpen}
+              aria-controls="calendar-create-schedule"
+              onClick={() => {
+                setIsCreateFormOpen((isOpen) => !isOpen)
+                setScheduleSaveError('')
+              }}
+            >
+              <CalendarPlus size={17} aria-hidden="true" />
+              {isCreateFormOpen ? 'Cancel' : 'Create schedule'}
+            </button>
+          )}
         </header>
+
+        {isCreateFormOpen && adminStatus === 'admin' && (
+          <section className="calendar-create-panel" id="calendar-create-schedule" aria-labelledby="calendar-create-title">
+            <h2 id="calendar-create-title">Create a schedule</h2>
+            <form className="calendar-create-form" onSubmit={handleCreateSchedule}>
+              <label>
+                Name
+                <input
+                  type="text"
+                  name="name"
+                  value={scheduleForm.name}
+                  onChange={handleScheduleInputChange}
+                  placeholder="e.g. Community cleanup"
+                  required
+                />
+              </label>
+              <label>
+                Description
+                <textarea
+                  name="description"
+                  value={scheduleForm.description}
+                  onChange={handleScheduleInputChange}
+                  placeholder="Short description"
+                  rows="3"
+                />
+              </label>
+              <div className="calendar-create-date-fields">
+                <label>
+                  Start date
+                  <input type="date" name="startDate" value={scheduleForm.startDate} onChange={handleScheduleInputChange} required />
+                </label>
+                <label>
+                  Start time
+                  <input type="time" name="startTime" value={scheduleForm.startTime} onChange={handleScheduleInputChange} />
+                </label>
+                <label>
+                  End date
+                  <input type="date" name="endDate" value={scheduleForm.endDate} onChange={handleScheduleInputChange} />
+                </label>
+                <label>
+                  End time
+                  <input type="time" name="endTime" value={scheduleForm.endTime} onChange={handleScheduleInputChange} />
+                </label>
+              </div>
+              {scheduleSaveError && <p className="calendar-create-error" role="alert">{scheduleSaveError}</p>}
+              <button type="submit" className="calendar-create-submit" disabled={isSavingSchedule || !scheduleForm.name.trim() || !scheduleForm.startDate}>
+                {isSavingSchedule ? 'Saving…' : 'Save schedule'}
+              </button>
+            </form>
+          </section>
+        )}
 
         <section className="calendar-controls-panel" aria-label="Calendar controls and filters">
           <div className="calendar-month-nav-bar">

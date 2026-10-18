@@ -39,6 +39,109 @@
   font-size: 0.85rem;
 }
 
+.calendar-create-button,
+.calendar-create-submit {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--color-brown);
+  background: var(--color-brown);
+  color: var(--color-cream);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.calendar-create-button:hover,
+.calendar-create-submit:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-brown) 85%, black);
+  background: color-mix(in srgb, var(--color-brown) 85%, black);
+}
+
+.calendar-create-button:focus-visible,
+.calendar-create-submit:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.calendar-create-panel {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.4fr) minmax(0, 1fr);
+  gap: 1rem 2rem;
+  padding: 1.25rem clamp(1.2rem, 3vw, 1.75rem);
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-soft);
+}
+
+.calendar-create-panel h2 {
+  margin: 0;
+  color: var(--color-brown);
+  font-family: Manrope, sans-serif;
+  font-size: 1.05rem;
+}
+
+.calendar-create-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.calendar-create-form label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--color-brown);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.calendar-create-form input,
+.calendar-create-form textarea {
+  width: 100%;
+  min-height: 2.35rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-cream);
+  color: var(--color-brown);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+.calendar-create-form textarea {
+  resize: vertical;
+}
+
+.calendar-create-form input:focus,
+.calendar-create-form textarea:focus {
+  border-color: var(--color-gold);
+  outline: 2px solid color-mix(in srgb, var(--color-gold) 35%, transparent);
+}
+
+.calendar-create-date-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.calendar-create-submit {
+  justify-self: start;
+}
+
+.calendar-create-submit:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.calendar-create-error {
+  margin: 0;
+  color: #b93824;
+  font-size: 0.78rem;
+}
+
 .calendar-controls-panel {
   border-bottom: 1px solid var(--color-line);
   background: var(--color-soft);
@@ -405,6 +508,10 @@
 }
 
 @media (max-width: 900px) {
+  .calendar-create-date-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .calendar-month-nav-bar {
     flex-direction: column;
     align-items: stretch;
@@ -428,6 +535,14 @@
 @media (max-width: 600px) {
   .calendar-page {
     padding: 0.6rem;
+  }
+
+  .calendar-create-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .calendar-create-date-fields {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .calendar-weekday {

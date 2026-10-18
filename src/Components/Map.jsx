@@ -151,7 +151,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   const isAdmin = adminStatus === 'admin';
   const canCreateReports = Boolean(db && user);
   const canCreateMarkers = isAdmin || canCreateReports;
-  const availableCategories = isAdmin ? categories : ['Report'];
+  const availableCategories = isAdmin ? categories.filter((category) => category !== 'Schedule') : ['Report'];
   const selectedFormCategory = isAdmin ? formData.category : 'Report';
   const selectedLocation = locations.find((location) => location.id === selectedLocationId) || null;
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
@@ -335,13 +335,12 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   const handleAddLocation = async (event) => {
     event.preventDefault();
 
-    const isSchedule = selectedFormCategory === 'Schedule';
-    if (!db || !user || !canCreateMarkers || (!selectedPosition && !editingLocationId && !isSchedule)
-      || !formData.name.trim() || (isSchedule && !formData.startDate)) {
+    if (!db || !user || !canCreateMarkers || (!selectedPosition && !editingLocationId)
+      || !formData.name.trim()) {
       return;
     }
 
-    if (!isSchedule && !editingLocationId) {
+    if (!editingLocationId) {
       if (!selectedPosition || !isInBagoAplaya(selectedPosition)) {
         setSaveError('Locations can only be placed within the Bago Aplaya boundary.');
         return;
@@ -372,19 +371,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
     setSaveError('');
 
     try {
-      if (isSchedule) {
-        await addDoc(collection(db, 'Schedules'), {
-          category: 'Schedule',
-          name: locationDetails.name,
-          description: locationDetails.description,
-          startDate: formData.startDate,
-          startTime: formData.startTime,
-          endDate: formData.endDate || formData.startDate,
-          endTime: formData.endTime,
-          createdBy: user.uid,
-          createdAt: serverTimestamp(),
-        });
-      } else if (editingLocationId) {
+      if (editingLocationId) {
         await updateDoc(doc(db, 'Locations', editingLocationId), locationDetails);
         setEditingLocationId(null);
         setPanelOpen(false);
@@ -685,7 +672,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                     <form className="add-location-form" onSubmit={handleAddLocation}>
                       <h3>{editingLocationId ? 'Edit marker' : 'Add a location'}</h3>
                       {!isAdmin && <p className="report-access-note">You can submit a report. Other location types are reserved for admins.</p>}
-                      {selectedFormCategory !== 'Schedule' && !editingLocationId && (
+                      {!editingLocationId && (
                         selectedPosition ? (
                           <p className="map-feedback">Pin placed inside Bago Aplaya ({selectedPosition.lat.toFixed(5)}, {selectedPosition.lng.toFixed(5)}).</p>
                         ) : (
@@ -734,7 +721,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                           <>
                             <label>
                               Start Date
-                              <input name="startDate" type="date" value={formData.startDate} onChange={handleInputChange} required={selectedFormCategory === 'Schedule'} />
+                              <input name="startDate" type="date" value={formData.startDate} onChange={handleInputChange} />
                             </label>
                             <label>
                               Start Time
@@ -750,10 +737,6 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                             </label>
                           </>
                         )}
-
-                      {selectedFormCategory === 'Schedule' && (
-                        <p className="map-feedback">Schedules appear in Updates and the calendar without a map pin.</p>
-                      )}
 
                       <label>
                         {selectedFormCategory === 'Hazard' ? 'Warning and instructions' : 'Description'}
@@ -795,9 +778,9 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                         </>
                       )}
 
-                      <button type="submit" disabled={((selectedFormCategory !== 'Schedule' && (!selectedPosition || !isInBagoAplaya(selectedPosition)) && !editingLocationId)
-                        || !formData.name.trim() || (selectedFormCategory === 'Schedule' && !formData.startDate) || isSaving)}>
-                        {isSaving ? (isAdmin ? 'Saving…' : 'Submitting report…') : editingLocationId ? 'Save changes' : selectedFormCategory === 'Schedule' ? 'Add Schedule' : isAdmin ? 'Add Location' : 'Submit Report'}
+                      <button type="submit" disabled={((!selectedPosition || !isInBagoAplaya(selectedPosition)) && !editingLocationId)
+                        || !formData.name.trim() || isSaving}>
+                        {isSaving ? (isAdmin ? 'Saving…' : 'Submitting report…') : editingLocationId ? 'Save changes' : isAdmin ? 'Add Location' : 'Submit Report'}
                       </button>
                       {editingLocationId && <button className="map-danger-button" type="button" onClick={handleCancelEdit}>Cancel edit</button>}
                       {saveError && <p className="map-feedback map-feedback--error" role="alert">{saveError}</p>}
