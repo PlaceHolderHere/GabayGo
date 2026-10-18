@@ -874,15 +874,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                 key={`temporary-${selectedPosition.lat}-${selectedPosition.lng}`}
                 position={[selectedPosition.lat, selectedPosition.lng]}
                 icon={temporaryLocationIcon}
-              >
-                <Popup>
-                  <div className="popup-card popup-card--temporary">
-                    <strong>New location</strong>
-                    <span>Temporary</span>
-                    <p>Select a name and save this location.</p>
-                  </div>
-                </Popup>
-              </Marker>
+              />
             )}
 
             {focusedMapLocation && !focusedMapLocation.id && (
