@@ -117,9 +117,9 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   const [reportStatusFeedback, setReportStatusFeedback] = useState({ locationId: null, status: '', error: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [editingLocationId, setEditingLocationId] = useState(null);
-  const [panelOpen, setPanelOpen] = useState(() => !focusedMapLocation);
+  const [panelOpen, setPanelOpen] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
-  const [activePanelTab, setActivePanelTab] = useState('search');
+  const [activePanelTab, setActivePanelTab] = useState(() => focusedMapLocation ? 'info' : 'search');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilters, setCategoryFilters] = useState([]);
   const [selectedPosition, setSelectedPosition] = useState(null);

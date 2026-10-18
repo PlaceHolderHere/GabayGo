@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
 import { BriefcaseBusiness, ExternalLink, MessageSquareWarning, PhoneCall, Store } from 'lucide-react'
 import BagoAplayaBorder from '../Components/BagoAplayaBorder'
 import CommunityParticipationForms from '../Components/CommunityParticipationForms'
+import EventDetailsModal from '../Components/EventDetailsModal'
 import { categoryIcons, defaultIcon } from '../Components/mapIcons'
 import { officialContacts, officialServices } from '../data/officialResources'
+import { makeEvent } from '../utils/eventUtils'
 import 'leaflet/dist/leaflet.css'
 import './Home.css'
 
@@ -48,6 +51,8 @@ function phoneHref(number) {
 }
 
 export default function Home({ user, locations, locationsStatus, onNavigate, onRequestLogin }) {
+  const [selectedUpdate, setSelectedUpdate] = useState(null)
+
   const updates = [...locations]
     .filter((location) => ['Outage', 'Service', 'Marketplace', 'Report', 'Hazard'].includes(location.category))
     .sort((first, second) => getLocationTime(second) - getLocationTime(first))
@@ -179,7 +184,7 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
                 className={`home-update-card${index === 1 ? ' home-update-card--featured' : ''}`}
                 type="button"
                 key={update.id}
-                onClick={() => onNavigate('updates')}
+                onClick={() => setSelectedUpdate(update)}
               >
                 <span className="home-update-category">{update.category}</span>
                 <span className="home-update-title">{update.name}</span>
@@ -201,6 +206,19 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
       <section className="home-community-section" aria-label="Community participation">
         <CommunityParticipationForms key={user?.uid || 'signed-out'} user={user} onRequestLogin={onRequestLogin} />
       </section>
+
+      {selectedUpdate && (
+        <EventDetailsModal
+          selectedEvent={makeEvent(selectedUpdate, 'location', selectedUpdate.startDate || '', {
+            startDate: selectedUpdate.startDate || '',
+            endDate: selectedUpdate.endDate || '',
+            startTime: selectedUpdate.startTime || '',
+            endTime: selectedUpdate.endTime || '',
+          })}
+          user={user}
+          onClose={() => setSelectedUpdate(null)}
+        />
+      )}
     </main>
   )
 }

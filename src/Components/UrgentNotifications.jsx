@@ -37,6 +37,44 @@ function getAlertOrder(location, now) {
   return { priority: 4, sortTime: endsAt?.getTime() || startsAt?.getTime() || 0, timing: 'Ended' }
 }
 
+/* SVG icons per category */
+const categoryIcons = {
+  Hazard: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  ),
+  Outage: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <line x1="1" y1="1" x2="23" y2="23" />
+      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+      <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+      <path d="M10.71 5.05A16 16 0 0 1 22.56 9" />
+      <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+      <line x1="12" y1="20" x2="12.01" y2="20" />
+    </svg>
+  ),
+  Evacuation: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+  ),
+  Relief: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0L12 5.34l-.77-.76a5.4 5.4 0 0 0-7.65 0 5.4 5.4 0 0 0 0 7.65L12 20.65l8.42-8.42a5.4 5.4 0 0 0 0-7.65z" />
+    </svg>
+  ),
+}
+
+function getCategoryIcon(category) {
+  return categoryIcons[category] || categoryIcons.Hazard
+}
+
 export default function UrgentNotifications({
   locations = [],
   locationsStatus,
@@ -138,19 +176,29 @@ export default function UrgentNotifications({
                     onClick={() => handleSelectAlert(location)}
                     title="View on map"
                   >
-                    <div className="urgent-alert-header-row">
-                      <span className="urgent-alert-category">{location.category}</span>
-                      <span className="urgent-alert-hint">View on map ↗</span>
+                    {/* Icon on the left */}
+                    <span className={`urgent-alert-icon urgent-alert-icon--${location.category.toLowerCase()}`}>
+                      {getCategoryIcon(location.category)}
+                    </span>
+
+                    {/* Content in the center */}
+                    <div className="urgent-alert-content">
+                      <div className="urgent-alert-title-row">
+                        <strong className="urgent-alert-title">{location.name}</strong>
+                        <span className={`urgent-alert-type urgent-alert-type--${location.category.toLowerCase()}`}>
+                          {location.category}
+                        </span>
+                      </div>
+                      <span className="urgent-alert-timing">{timing}</span>
+                      {location.category === 'Hazard' && (
+                        <span className="urgent-alert-detail">
+                          Coverage radius: {location.hazardRadius || defaultHazardRadius} m
+                        </span>
+                      )}
+                      {location.description && (
+                        <p className="urgent-alert-desc">{location.description}</p>
+                      )}
                     </div>
-                    <strong>{location.name}</strong>
-                    <p>{location.description || 'No additional details provided.'}</p>
-                    {location.category === 'Hazard' && (
-                      <>
-                        <span className="urgent-alert-meta">Coverage radius: {location.hazardRadius || defaultHazardRadius} m</span>
-                        <span className="urgent-alert-meta">{timing}</span>
-                      </>
-                    )}
-                    {['Outage', 'Evacuation', 'Relief'].includes(location.category) && <span className="urgent-alert-meta">{timing}</span>}
                   </button>
                 </li>
               ))}

@@ -76,50 +76,51 @@
   background: #fdf5f3;
 }
 
+/* ─── Panel ─── */
+
 .urgent-alerts-panel {
   position: fixed;
   z-index: 1090;
   inset: 1rem 1rem 1rem auto;
   display: flex;
-  width: min(360px, calc(100vw - 2rem));
+  width: min(380px, calc(100vw - 2rem));
   max-height: calc(100vh - 2rem);
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0;
   overflow-y: auto;
   border: 1px solid var(--color-line);
   border-top: 4px solid #b93824;
   background: var(--color-cream);
   box-shadow: 0 14px 36px color-mix(in srgb, var(--color-brown) 25%, transparent);
-  padding: 1.1rem;
+  padding: 0;
   border-radius: 4px;
 }
 
 .urgent-alerts-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  min-height: 2.8rem;
-  padding-right: 3rem;
+  padding: 1rem 1.1rem;
   border-bottom: 1px solid var(--color-line);
 }
 
 .urgent-alerts-header-info h2 {
-  margin: 0.3rem 0 0.8rem;
+  margin: 0;
   color: var(--color-brown);
   font-family: Manrope, sans-serif;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .urgent-alerts-badge {
   display: inline-flex;
   align-items: center;
-  margin-top: 0.2rem;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
   font-size: 0.68rem;
   font-weight: 750;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .urgent-alerts-badge--active {
@@ -134,105 +135,195 @@
   border: 1px solid var(--color-line);
 }
 
+/* ─── Alert List ─── */
+
 .urgent-alerts-list {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+  overflow-y: auto;
+  flex: 1 1 auto;
 }
 
 .urgent-alert-item {
-  display: grid;
-  gap: 0.35rem;
-  padding: 0.8rem 0 0.85rem 0.75rem;
   border-bottom: 1px solid var(--color-line);
-  border-left: 3px solid #b93824;
 }
 
-.urgent-alert-item--outage {
-  border-left-color: var(--color-gold);
+.urgent-alert-item:last-child {
+  border-bottom: none;
 }
 
-.urgent-alert-item--relief {
-  border-left-color: #287c8e;
-}
+/* ─── Alert Button (the clickable row) ─── */
 
 .urgent-alert-select-button {
   display: flex;
   width: 100%;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 0;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem 1.1rem;
   border: none;
   background: transparent;
   color: inherit;
   font-family: inherit;
   text-align: left;
   cursor: pointer;
+  transition: background 0.18s ease, box-shadow 0.18s ease;
 }
 
-.urgent-alert-select-button:hover strong {
-  color: #8b2b1f;
-}
-
-.urgent-alert-select-button:hover .urgent-alert-hint {
-  color: #8b2b1f;
+.urgent-alert-select-button:hover {
+  background: var(--color-soft);
 }
 
 .urgent-alert-select-button:focus-visible {
   outline: 2px solid var(--color-gold);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
-.urgent-alert-header-row {
+/* ─── Icon (left side) ─── */
+
+.urgent-alert-icon {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  min-width: 2.2rem;
+  place-items: center;
+  border-radius: 8px;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.urgent-alert-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.urgent-alert-icon--hazard {
+  background: #fde8e4;
+  color: #b93824;
+}
+
+.urgent-alert-icon--outage {
+  background: #fef3d7;
+  color: #b88a14;
+}
+
+.urgent-alert-icon--evacuation {
+  background: #fde8e4;
+  color: #b93824;
+}
+
+.urgent-alert-icon--relief {
+  background: #ddf1f4;
+  color: #287c8e;
+}
+
+/* ─── Content (center) ─── */
+
+.urgent-alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.urgent-alert-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
 }
 
-.urgent-alert-hint {
-  color: var(--color-muted);
-  font-size: 0.66rem;
+.urgent-alert-title {
+  color: var(--color-brown);
+  font-size: 0.88rem;
   font-weight: 700;
-  transition: color 0.15s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.urgent-alert-category {
-  color: #8b2b1f;
-  font-size: 0.66rem;
+/* ─── Type badge (right of title) ─── */
+
+.urgent-alert-type {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6rem;
   font-weight: 750;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+  line-height: 1.4;
 }
 
-.urgent-alert-item--outage .urgent-alert-category {
-  color: var(--color-brown);
+.urgent-alert-type--hazard {
+  background: #fde8e4;
+  color: #8b2b1f;
+  border: 1px solid color-mix(in srgb, #b93824 22%, transparent);
 }
 
-.urgent-alert-item strong {
-  color: var(--color-brown);
-  font-size: 0.9rem;
-  overflow-wrap: anywhere;
+.urgent-alert-type--outage {
+  background: #fef3d7;
+  color: #8a6b0e;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 30%, transparent);
 }
 
-.urgent-alert-item p {
-  margin: 0;
+.urgent-alert-type--evacuation {
+  background: #fde8e4;
+  color: #8b2b1f;
+  border: 1px solid color-mix(in srgb, #b93824 22%, transparent);
+}
+
+.urgent-alert-type--relief {
+  background: #ddf1f4;
+  color: #1e606d;
+  border: 1px solid color-mix(in srgb, #287c8e 22%, transparent);
+}
+
+/* ─── Date / Time / Meta ─── */
+
+.urgent-alert-timing {
   color: var(--color-muted);
-  font-size: 0.78rem;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
+  font-size: 0.72rem;
+  line-height: 1.3;
 }
 
-.urgent-alert-meta {
+.urgent-alert-detail {
   color: var(--color-muted);
   font-size: 0.7rem;
 }
+
+.urgent-alert-desc {
+  margin: 0.15rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ─── Empty State ─── */
 
 .urgent-alerts-empty-container {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  padding: 1.1rem;
 }
 
 .urgent-alerts-empty {
@@ -253,9 +344,11 @@
   padding: 0 0.2rem;
 }
 
+/* ─── Footer ─── */
+
 .urgent-alerts-footer {
   margin-top: auto;
-  padding-top: 0.75rem;
+  padding: 0.75rem 1.1rem;
   border-top: 1px solid var(--color-line);
 }
 
@@ -289,6 +382,8 @@
   outline: 2px solid var(--color-gold);
   outline-offset: 2px;
 }
+
+/* ─── Responsive ─── */
 
 @media (max-width: 860px) {
   .notifications-toggle {
