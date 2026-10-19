@@ -421,7 +421,7 @@ service cloud.firestore {
 
     function validMarketplaceOrder(data) {
       return data.keys().hasAll(['listingId', 'listingTitle', 'price', 'buyerId', 'buyerName', 'sellerId', 'sellerName', 'status', 'createdAt'])
-        && data.keys().hasOnly(['listingId', 'listingTitle', 'price', 'buyerId', 'buyerName', 'sellerId', 'sellerName', 'status', 'createdAt', 'respondedAt'])
+        && data.keys().hasOnly(['listingId', 'listingTitle', 'price', 'buyerId', 'buyerName', 'sellerId', 'sellerName', 'status', 'createdAt', 'respondedAt', 'quantity', 'notes', 'completedAt'])
         && data.listingId is string
         && data.listingTitle is string
         && data.price is string
@@ -434,9 +434,12 @@ service cloud.firestore {
         && data.sellerName.size() > 0
         && data.sellerName.size() <= 120
         && data.buyerId != data.sellerId
-        && data.status in ['pending', 'accepted', 'rejected']
+        && data.status in ['pending', 'accepted', 'completed', 'rejected']
         && data.createdAt is timestamp
-        && (!data.keys().hasAny(['respondedAt']) || data.respondedAt == null || data.respondedAt is timestamp);
+        && (!data.keys().hasAny(['respondedAt']) || data.respondedAt == null || data.respondedAt is timestamp)
+        && (!data.keys().hasAny(['quantity']) || (data.quantity is int && data.quantity >= 1 && data.quantity <= 10000))
+        && (!data.keys().hasAny(['notes']) || (data.notes is string && data.notes.size() <= 1000))
+        && (!data.keys().hasAny(['completedAt']) || data.completedAt is timestamp);
     }
 
     match /MarketplaceOrders/{orderId} {
@@ -455,11 +458,22 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/MarketplaceListings/$(request.resource.data.listingId)).data.price == request.resource.data.price;
       allow update: if request.auth != null
         && validMarketplaceOrder(request.resource.data)
-        && resource.data.sellerId == request.auth.uid
-        && resource.data.status == 'pending'
-        && request.resource.data.status in ['accepted', 'rejected']
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'respondedAt'])
-        && request.resource.data.respondedAt == request.time;
+        && (
+          (resource.data.sellerId == request.auth.uid
+            && resource.data.status == 'pending'
+            && request.resource.data.status in ['accepted', 'rejected']
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'respondedAt'])
+            && request.resource.data.respondedAt == request.time)
+          || (resource.data.sellerId == request.auth.uid
+            && resource.data.status == 'accepted'
+            && request.resource.data.status == 'completed'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt'])
+            && request.resource.data.completedAt == request.time)
+          || (resource.data.buyerId == request.auth.uid
+            && resource.data.status == 'pending'
+            && request.resource.data.status == 'pending'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quantity', 'notes']))
+        );
       allow delete: if request.auth != null
         && resource.data.buyerId == request.auth.uid
         && resource.data.status in ['pending', 'rejected'];

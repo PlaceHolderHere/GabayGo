@@ -103,6 +103,10 @@ export default function Marketplace({
   const [saveSuccessMessage, setSaveSuccessMessage] = useState('')
   const [deleteFeedback, setDeleteFeedback] = useState({ listingId: null, status: '', error: '' })
   const [activeTab, setActiveTab] = useState('approved')
+  const [activeOrdersTab, setActiveOrdersTab] = useState('pending')
+  const [orderDrafts, setOrderDrafts] = useState({})
+  const [editingOrderId, setEditingOrderId] = useState(null)
+  const [orderEditForm, setOrderEditForm] = useState({ quantity: '1', notes: '' })
   const [isComposeOpen, setIsComposeOpen] = useState(false)
   const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' })
   const [buyerOrderSnapshot, setBuyerOrderSnapshot] = useState({ uid: null, orders: [] })
@@ -183,6 +187,7 @@ export default function Marketplace({
     const uniqueOrders = new Map([...buyerOrders, ...sellerOrders].map((order) => [order.id, order]))
     return [...uniqueOrders.values()].sort((first, second) => (second.createdAt?.toMillis?.() || 0) - (first.createdAt?.toMillis?.() || 0))
   }, [buyerOrderSnapshot, sellerOrderSnapshot, user?.uid])
+  const visibleOrders = orders.filter((order) => order.status === activeOrdersTab)
 
   const marketplaceLocations = locations.filter((location) => location.category === 'Marketplace')
   const locationById = useMemo(
@@ -426,6 +431,12 @@ export default function Marketplace({
 
   const handlePlaceOrder = async (listing) => {
     if (!db || !user || user.uid === listing.createdBy || listing.approvalStatus !== 'approved' || listing.active === false) return
+    const draft = orderDrafts[listing.id] || { quantity: '1', notes: '' }
+    const quantity = Number(draft.quantity)
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10000) {
+      setOrderAction({ orderId: listing.id, status: '', error: 'Enter a quantity between 1 and 10,000.' })
+      return
+    }
     setOrderAction({ orderId: listing.id, status: 'ordering', error: '' })
     try {
       await addDoc(collection(db, 'MarketplaceOrders'), {
@@ -436,9 +447,12 @@ export default function Marketplace({
         buyerName: getUsername(user),
         sellerId: listing.createdBy,
         sellerName: getMemberLabel(listing.createdByName, listing.createdBy, user),
+        quantity,
+        notes: draft.notes.trim(),
         status: 'pending',
         createdAt: serverTimestamp(),
       })
+      setOrderDrafts((current) => ({ ...current, [listing.id]: { quantity: '1', notes: '' } }))
       setOrderAction({ orderId: listing.id, status: 'ordered', error: '' })
     } catch {
       setOrderAction({ orderId: listing.id, status: '', error: 'Order could not be placed. Check that Firestore rules are published and try again.' })
@@ -446,13 +460,47 @@ export default function Marketplace({
   }
 
   const handleUpdateOrder = async (order, status) => {
-    if (!db || !user || order.sellerId !== user.uid || order.status !== 'pending') return
+    const isSellerAction = order.sellerId === user?.uid && order.status === 'pending' && ['accepted', 'rejected'].includes(status)
+    const isCompletion = order.sellerId === user?.uid && order.status === 'accepted' && status === 'completed'
+    if (!db || !user || (!isSellerAction && !isCompletion)) return
     setOrderAction({ orderId: order.id, status: 'updating', error: '' })
     try {
-      await updateDoc(doc(db, 'MarketplaceOrders', order.id), { status, respondedAt: serverTimestamp() })
+      await updateDoc(doc(db, 'MarketplaceOrders', order.id), {
+        status,
+        ...(status === 'completed' ? { completedAt: serverTimestamp() } : { respondedAt: serverTimestamp() }),
+      })
       setOrderAction({ orderId: null, status: '', error: '' })
     } catch {
       setOrderAction({ orderId: order.id, status: '', error: 'Order status could not be updated. Check Firestore rules and try again.' })
+    }
+  }
+
+  const handleEditOrder = (order) => {
+    if (!user || order.buyerId !== user.uid || order.status !== 'pending') return
+    setEditingOrderId(order.id)
+    setOrderEditForm({
+      quantity: String(order.quantity ?? 1),
+      notes: order.notes || '',
+    })
+  }
+
+  const handleSaveOrderEdit = async (order) => {
+    const quantity = Number(orderEditForm.quantity)
+    if (!db || !user || order.buyerId !== user.uid || order.status !== 'pending') return
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10000) {
+      setOrderAction({ orderId: order.id, status: '', error: 'Enter a quantity between 1 and 10,000.' })
+      return
+    }
+    setOrderAction({ orderId: order.id, status: 'saving', error: '' })
+    try {
+      await updateDoc(doc(db, 'MarketplaceOrders', order.id), {
+        quantity,
+        notes: orderEditForm.notes.trim(),
+      })
+      setEditingOrderId(null)
+      setOrderAction({ orderId: null, status: '', error: '' })
+    } catch {
+      setOrderAction({ orderId: order.id, status: '', error: 'Order could not be updated. Check Firestore rules and try again.' })
     }
   }
 
@@ -471,7 +519,6 @@ export default function Marketplace({
     <main className="marketplace-page">
       <header className="marketplace-header">
         <div>
-          <p className="marketplace-eyebrow">GabayGo community</p>
           <h1>Marketplace</h1>
           <p>Local goods and services connected to community market locations.</p>
         </div>
@@ -688,6 +735,41 @@ export default function Marketplace({
                     )}
                     {listing.approvalStatus === 'approved' && listing.active !== false && user?.uid !== listing.createdBy && (
                       <div className="marketplace-listing-owner-actions">
+                        {user && <>
+                          <label className="marketplace-order-field">
+                            Quantity
+                            <input
+                              type="number"
+                              min="1"
+                              max="10000"
+                              step="1"
+                              value={orderDrafts[listing.id]?.quantity ?? '1'}
+                              onChange={(event) => setOrderDrafts((current) => ({
+                                ...current,
+                                [listing.id]: {
+                                  ...(current[listing.id] || { quantity: '1', notes: '' }),
+                                  quantity: event.target.value,
+                                },
+                              }))}
+                            />
+                          </label>
+                          <label className="marketplace-order-field">
+                            Notes for the seller (optional)
+                            <textarea
+                              rows="2"
+                              maxLength="1000"
+                              value={orderDrafts[listing.id]?.notes ?? ''}
+                              onChange={(event) => setOrderDrafts((current) => ({
+                                ...current,
+                                [listing.id]: {
+                                  ...(current[listing.id] || { quantity: '1', notes: '' }),
+                                  notes: event.target.value,
+                                },
+                              }))}
+                              placeholder="Add any details about your order"
+                            />
+                          </label>
+                        </>}
                         <button className="marketplace-secondary-button" type="button" onClick={() => handlePlaceOrder(listing)} disabled={!user || orderAction.status === 'ordering'}>
                           {orderAction.orderId === listing.id && orderAction.status === 'ordering' ? 'Placing order…' : 'Place an order'}
                         </button>
@@ -705,14 +787,37 @@ export default function Marketplace({
             <header className="marketplace-results-header">
               <div><h2>Orders</h2><p>Orders you placed and requests sellers sent to you.</p></div>
             </header>
+            <div className="marketplace-order-tabs" role="tablist" aria-label="Order status">
+              {[
+                ['pending', 'Pending orders'],
+                ['accepted', 'Accepted'],
+                ['completed', 'Completed'],
+                ['rejected', 'Rejected'],
+              ].map(([status, label]) => (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeOrdersTab === status}
+                  onClick={() => {
+                    setActiveOrdersTab(status)
+                    setEditingOrderId(null)
+                  }}
+                  key={status}
+                >
+                  {label} <span>{orders.filter((order) => order.status === status).length}</span>
+                </button>
+              ))}
+            </div>
             {!user && <p className="marketplace-empty">Sign in to view your orders.</p>}
             {ordersError && <p className="marketplace-empty marketplace-empty--error" role="alert">{ordersError}</p>}
-            {user && !ordersError && orders.length === 0 && <p className="marketplace-empty">No orders yet.</p>}
+            {user && !ordersError && visibleOrders.length === 0 && <p className="marketplace-empty">No {activeOrdersTab} orders.</p>}
             <ul className="marketplace-order-list">
-              {orders.map((order) => {
+              {visibleOrders.map((order) => {
                 const isSeller = order.sellerId === user?.uid
                 const canRespond = isSeller && order.status === 'pending'
                 const canDelete = order.buyerId === user?.uid && ['pending', 'rejected'].includes(order.status)
+                const canEdit = order.buyerId === user?.uid && order.status === 'pending'
+                const canComplete = isSeller && order.status === 'accepted'
                 return <li className="marketplace-order" key={order.id}>
                   <div className="marketplace-order-heading">
                     <h3>{order.listingTitle}</h3>
@@ -720,12 +825,49 @@ export default function Marketplace({
                   </div>
                   <p>{isSeller ? 'Buyer request' : 'Your order'} · {order.price}</p>
                   <p>{isSeller ? 'Buyer' : 'Seller'}: {getMemberLabel(isSeller ? order.buyerName : order.sellerName, isSeller ? order.buyerId : order.sellerId, user)}</p>
+                  {editingOrderId === order.id ? (
+                    <div className="marketplace-order-edit">
+                      <label className="marketplace-order-field">
+                        Quantity
+                        <input
+                          type="number"
+                          min="1"
+                          max="10000"
+                          step="1"
+                          value={orderEditForm.quantity}
+                          onChange={(event) => setOrderEditForm((current) => ({ ...current, quantity: event.target.value }))}
+                        />
+                      </label>
+                      <label className="marketplace-order-field">
+                        Notes for the seller (optional)
+                        <textarea
+                          rows="3"
+                          maxLength="1000"
+                          value={orderEditForm.notes}
+                          onChange={(event) => setOrderEditForm((current) => ({ ...current, notes: event.target.value }))}
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <>
+                      <p>Quantity: {order.quantity ?? 1}</p>
+                      {order.notes && <p>Notes: {order.notes}</p>}
+                    </>
+                  )}
                   {formatCreatedDate(order.createdAt) && <time>{formatCreatedDate(order.createdAt)}</time>}
                   <div className="marketplace-order-actions">
                     {canRespond && <>
                       <button className="marketplace-secondary-button" type="button" onClick={() => handleUpdateOrder(order, 'accepted')} disabled={orderAction.orderId === order.id}>Accept</button>
                       <button className="marketplace-delete-button" type="button" onClick={() => handleUpdateOrder(order, 'rejected')} disabled={orderAction.orderId === order.id}>Reject</button>
                     </>}
+                    {canComplete && <button className="marketplace-secondary-button" type="button" onClick={() => handleUpdateOrder(order, 'completed')} disabled={orderAction.orderId === order.id}>Mark completed</button>}
+                    {canEdit && editingOrderId === order.id && <>
+                      <button className="marketplace-secondary-button" type="button" onClick={() => handleSaveOrderEdit(order)} disabled={orderAction.orderId === order.id && orderAction.status === 'saving'}>
+                        {orderAction.orderId === order.id && orderAction.status === 'saving' ? 'Saving…' : 'Save changes'}
+                      </button>
+                      <button className="marketplace-secondary-button" type="button" onClick={() => setEditingOrderId(null)}>Cancel</button>
+                    </>}
+                    {canEdit && editingOrderId !== order.id && <button className="marketplace-secondary-button" type="button" onClick={() => handleEditOrder(order)}>Edit order</button>}
                     {canDelete && <button className="marketplace-delete-button" type="button" onClick={() => handleDeleteOrder(order)} disabled={orderAction.orderId === order.id}>Delete order</button>}
                     {orderAction.orderId === order.id && orderAction.error && <p className="marketplace-feedback marketplace-feedback--error" role="alert">{orderAction.error}</p>}
                   </div>
