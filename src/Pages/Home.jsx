@@ -4,6 +4,7 @@ import { BriefcaseBusiness, ExternalLink, MessageSquareWarning, PhoneCall, Store
 import BagoAplayaBorder from '../Components/BagoAplayaBorder'
 import EventDetailsModal from '../Components/EventDetailsModal'
 import { categoryIcons, defaultIcon } from '../Components/mapIcons'
+import { bagoAplayaMaxBounds } from '../data/bagoAplaya'
 import { officialContacts, officialServices } from '../data/officialResources'
 import { makeEvent } from '../utils/eventUtils'
 import 'leaflet/dist/leaflet.css'
@@ -77,12 +78,21 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
         </div>
         <div className="home-hero-map" aria-label="Bago Aplaya map preview">
           <div className="home-hero-map-frame">
-            <MapContainer center={[7.0435, 125.5315]} zoom={14} scrollWheelZoom={false} dragging={false} className="home-hero-map-preview">
+            <MapContainer
+              center={[7.0435, 125.5315]}
+              zoom={14}
+              minZoom={14}
+              maxBounds={bagoAplayaMaxBounds}
+              maxBoundsViscosity={0.9}
+              scrollWheelZoom={false}
+              dragging={false}
+              className="home-hero-map-preview"
+            >
               <TileLayer
                 attribution='&copy; OpenStreetMap contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              <BagoAplayaBorder />
+              <BagoAplayaBorder blurOutside={false} />
               {locations.slice(0, 18).map((location) => (
                 <Marker
                   key={location.id}
