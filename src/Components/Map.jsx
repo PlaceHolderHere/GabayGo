@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import L from 'leaflet';
 import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import fishingMarkerIcon from '../assets/Fishing.svg';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import BagoAplayaBorder from './BagoAplayaBorder';
@@ -15,6 +17,30 @@ import {
 } from '../globals';
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
+import fishingRoutesData from '../data/fishingRoutes.json';
+
+const fishingRoutes = fishingRoutesData.routes.map((route) => route.waypoints
+  .filter((waypoint) => Number.isFinite(waypoint.latitude) && Number.isFinite(waypoint.longitude))
+  .map(({ latitude, longitude }) => [latitude, longitude]));
+
+const fishingRouteStartPoints = fishingRoutesData.routes
+  .map((route) => {
+    const startWaypoint = route.waypoints.find((waypoint) => Number.isFinite(waypoint.latitude) && Number.isFinite(waypoint.longitude));
+    return startWaypoint ? {
+      id: route.route_id,
+      name: route.name,
+      position: [startWaypoint.latitude, startWaypoint.longitude],
+    } : null;
+  })
+  .filter(Boolean);
+
+const fishingStartIcon = L.icon({
+  iconUrl: fishingMarkerIcon,
+  iconRetinaUrl: fishingMarkerIcon,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -14],
+});
 
 function formatRouteDistance(meters) {
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;
@@ -120,6 +146,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   const [isSaving, setIsSaving] = useState(false);
   const [editingLocationId, setEditingLocationId] = useState(null);
   const [panelOpen, setPanelOpen] = useState(true);
+  const [showFishingRoutes, setShowFishingRoutes] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [activePanelTab, setActivePanelTab] = useState(() => focusedMapLocation ? 'info' : 'search');
   const [searchQuery, setSearchQuery] = useState('');
@@ -667,6 +694,16 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
           <span aria-hidden="true">{panelOpen ? '‹' : '›'}</span>
         </button>
 
+        <button
+          type="button"
+          className={`map-route-toggle${showFishingRoutes ? ' map-route-toggle--active' : ''}`}
+          onClick={() => setShowFishingRoutes((current) => !current)}
+          aria-pressed={showFishingRoutes}
+        >
+          <span className="map-route-toggle__label">Fishing routes</span>
+          <span className="map-route-toggle__state">{showFishingRoutes ? 'On' : 'Off'}</span>
+        </button>
+
         {panelOpen && (
           <aside className={`map-panel${editingLocationId ? ' map-panel--editing' : ''}${activePanelTab === 'create' ? ' map-panel--create' : ''}`} id="map-panel" aria-label={editingLocationId ? 'Edit marker' : 'Add or search for a location'}>
             <div className="map-header">
@@ -1135,6 +1172,34 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                 }}
               />
             )}
+
+            {showFishingRoutes && fishingRoutes.map((route, index) => (
+              <Polyline
+                key={`fishing-route-${index}`}
+                positions={route}
+                pathOptions={{
+                  color: '#2a6fdb',
+                  weight: 3,
+                  opacity: 0.7,
+                  dashArray: '10 8',
+                }}
+              />
+            ))}
+
+            {showFishingRoutes && fishingRouteStartPoints.map((startPoint) => (
+              <Marker
+                key={`fishing-start-${startPoint.id}`}
+                position={startPoint.position}
+                icon={fishingStartIcon}
+              >
+                <Popup>
+                  <div className="popup-card popup-card--temporary">
+                    <strong>{startPoint.name}</strong>
+                    <span>Fishing route start</span>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
 
             {routeState?.status === 'ready' && (
               <Polyline

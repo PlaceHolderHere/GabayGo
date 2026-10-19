@@ -1,0 +1,141 @@
+{
+    "location": "Barangay Bago Aplaya, Talomo District, Davao City, Philippines",
+    "description": "Geographical coordinates for coastal and offshore fishing routes starting directly from the exact user-specified coastal coordinates of Bago Aplaya into the Davao Gulf.",
+    "datum": "WGS84",
+    "routes": [
+        {
+            "route_id": "route_01_from_point_1",
+            "name": "Bago Aplaya Route 1 (Starting at 7.03565, 125.53313)",
+            "type": "Coastal & Nearshore Trolling",
+            "target_depth_meters": "5 - 20m",
+            "waypoints": [
+                {
+                    "step": 1,
+                    "name": "Coastal Launch Point 1",
+                    "latitude": 7.03565,
+                    "longitude": 125.53313
+                },
+                {
+                    "step": 2,
+                    "name": "Nearshore Transition 1",
+                    "latitude": 7.034,
+                    "longitude": 125.54
+                },
+                {
+                    "step": 3,
+                    "name": "Offshore Fishing Ground 1",
+                    "latitude": 7.03,
+                    "longitude": 125.55
+                },
+                {
+                    "step": 4,
+                    "name": "Deepwater Marker 1",
+                    "latitude": 7.025,
+                    "longitude": 125.565
+                }
+            ]
+        },
+        {
+            "route_id": "route_02_from_point_2",
+            "name": "Bago Aplaya Route 2 (Starting at 7.03708, 125.53477)",
+            "type": "Hook-and-Line / Pelagic Drop",
+            "target_depth_meters": "10 - 35m",
+            "waypoints": [
+                {
+                    "step": 1,
+                    "name": "Coastal Launch Point 2",
+                    "latitude": 7.03708,
+                    "longitude": 125.53477
+                },
+                {
+                    "step": 2,
+                    "name": "Nearshore Transition 2",
+                    "latitude": 7.035,
+                    "longitude": 125.542
+                },
+                {
+                    "step": 3,
+                    "name": "Mid-Gulf Drop Point 2",
+                    "latitude": 7.028,
+                    "longitude": 125.555
+                },
+                {
+                    "step": 4,
+                    "name": "Outer Gulf Fishing Limit 2",
+                    "latitude": 7.02,
+                    "longitude": 125.57
+                }
+            ]
+        },
+        {
+            "route_id": "route_03_from_point_3",
+            "name": "Bago Aplaya Route 3 (Starting at 7.03280, 125.53278)",
+            "type": "Southern Coastal Line",
+            "target_depth_meters": "3 - 15m",
+            "waypoints": [
+                {
+                    "step": 1,
+                    "name": "Coastal Launch Point 3",
+                    "latitude": 7.0328,
+                    "longitude": 125.53278
+                },
+                {
+                    "step": 2,
+                    "name": "South Coast Shelf Edge",
+                    "latitude": 7.028,
+                    "longitude": 125.541
+                },
+                {
+                    "step": 3,
+                    "name": "Talomo-Bago Offshore Bank",
+                    "latitude": 7.022,
+                    "longitude": 125.552
+                },
+                {
+                    "step": 4,
+                    "name": "Deepwater Terminal Point 3",
+                    "latitude": 7.015,
+                    "longitude": 125.565
+                }
+            ]
+        },
+        {
+            "route_id": "route_04_from_point_4",
+            "name": "Bago Aplaya Route 4 (Starting at 7.04102, 125.53945)",
+            "type": "Northern Coastal & Loop Line",
+            "target_depth_meters": "8 - 30m",
+            "waypoints": [
+                {
+                    "step": 1,
+                    "name": "Coastal Launch Point 4",
+                    "latitude": 7.04102,
+                    "longitude": 125.53945
+                },
+                {
+                    "step": 2,
+                    "name": "North-East Coastal Extension",
+                    "latitude": 7.039,
+                    "longitude": 125.547
+                },
+                {
+                    "step": 3,
+                    "name": "Mid-Shelf Deep Spot 4",
+                    "latitude": 7.032,
+                    "longitude": 125.558
+                },
+                {
+                    "step": 4,
+                    "name": "Return Coastal Approach",
+                    "latitude": 7.035,
+                    "longitude": 125.535
+                },
+                {
+                    "step": 5,
+                    "name": "Coastal Landing Point 4",
+                    "latitude": 7.04102,
+                    "longitude": 125.53945
+                }
+            ]
+        }
+    ]
+}

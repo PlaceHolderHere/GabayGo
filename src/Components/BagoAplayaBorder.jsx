@@ -15,11 +15,12 @@ export default function BagoAplayaBorder({
   useEffect(() => {
     if (!map || !blurOutside) return undefined
 
-    const container = map.getContainer()
-    if (!container) return undefined
+    const blurPane = map.getPane('bagoBlurPane') || map.createPane('bagoBlurPane')
+    blurPane.style.zIndex = '300'
+    blurPane.style.pointerEvents = 'none'
 
     // Remove any stale overlay from previous mounts/HMR
-    const existing = container.querySelector('.bago-outside-blur-overlay')
+    const existing = blurPane.querySelector('.bago-outside-blur-overlay')
     if (existing) {
       existing.remove()
     }
@@ -28,19 +29,20 @@ export default function BagoAplayaBorder({
     overlay.className = 'bago-outside-blur-overlay'
     overlay.setAttribute('aria-hidden', 'true')
 
-    // Insert before control container so zoom buttons/attribution stay on top
-    const controlContainer = container.querySelector('.leaflet-control-container')
-    if (controlContainer) {
-      container.insertBefore(overlay, controlContainer)
-    } else {
-      container.appendChild(overlay)
-    }
+    // A pane between tiles and vectors lets the blur sample tiles without covering map markers.
+    blurPane.appendChild(overlay)
     overlayRef.current = overlay
 
     const updateClip = () => {
       if (!overlayRef.current) return
       const size = map.getSize()
       if (!size || size.x === 0 || size.y === 0) return
+
+      const topLeft = map.containerPointToLayerPoint([0, 0])
+      overlayRef.current.style.left = `${topLeft.x}px`
+      overlayRef.current.style.top = `${topLeft.y}px`
+      overlayRef.current.style.width = `${size.x}px`
+      overlayRef.current.style.height = `${size.y}px`
 
       const points = bagoAplayaRing.map(([lat, lng]) => {
         const pt = map.latLngToContainerPoint([lat, lng])
