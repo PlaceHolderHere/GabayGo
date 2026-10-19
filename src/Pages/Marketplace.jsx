@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet'
 import { addDoc, collection, deleteDoc, deleteField, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -103,14 +103,53 @@ export default function Marketplace({
   const [saveSuccessMessage, setSaveSuccessMessage] = useState('')
   const [deleteFeedback, setDeleteFeedback] = useState({ listingId: null, status: '', error: '' })
   const [activeTab, setActiveTab] = useState('listings')
+  const [isComposeOpen, setIsComposeOpen] = useState(false)
   const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' })
   const [buyerOrderSnapshot, setBuyerOrderSnapshot] = useState({ uid: null, orders: [] })
   const [sellerOrderSnapshot, setSellerOrderSnapshot] = useState({ uid: null, orders: [] })
   const [ordersErrorState, setOrdersErrorState] = useState({ uid: null, error: '' })
   const [orderAction, setOrderAction] = useState({ orderId: null, status: '', error: '' })
+  const createListingButtonRef = useRef(null)
+  const closeComposeButtonRef = useRef(null)
+  const composePanelRef = useRef(null)
   const isDemoAdmin = demoMode && user?.isAnonymous === true
   const adminStatus = !db ? 'unavailable' : !user ? 'signed-out' : isDemoAdmin ? 'admin' : adminCheck.uid === user.uid ? adminCheck.status : 'checking'
   const ordersError = ordersErrorState.uid === user?.uid ? ordersErrorState.error : ''
+
+  useEffect(() => {
+    if (!isComposeOpen) return undefined
+
+    const createListingButton = createListingButtonRef.current
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsComposeOpen(false)
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      const focusableElements = composePanelRef.current?.querySelectorAll(
+        'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      )
+      if (!focusableElements?.length) return
+
+      const firstElement = focusableElements[0]
+      const lastElement = focusableElements[focusableElements.length - 1]
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault()
+        lastElement.focus()
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault()
+        firstElement.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    closeComposeButtonRef.current?.focus()
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      createListingButton?.focus()
+    }
+  }, [isComposeOpen])
 
   useEffect(() => {
     if (!db || !user || isDemoAdmin) return undefined
@@ -269,6 +308,7 @@ export default function Marketplace({
   }
 
   const handleEditListing = (listing) => {
+    setIsComposeOpen(true)
     setEditingListingId(listing.id)
     setFormData({
       title: listing.title || '',
@@ -403,126 +443,6 @@ export default function Marketplace({
       </header>
 
       <div className="marketplace-layout">
-        <aside className="marketplace-compose" aria-labelledby="marketplace-form-title">
-          {user ? (
-            <form onSubmit={handleSubmit}>
-              <h2 id="marketplace-form-title">{editingListingId ? 'Edit listing' : 'Create a listing'}</h2>
-              <label>
-                Listing title
-                <input
-                  name="title"
-                  type="text"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  maxLength="100"
-                  required
-                  placeholder="e.g. Fresh vegetables"
-                />
-              </label>
-              <label>
-                Category
-                <select name="category" value={formData.category} onChange={handleInputChange}>
-                  {listingCategories.map((category) => <option key={category}>{category}</option>)}
-                </select>
-              </label>
-              <div className="marketplace-location-picker">
-                <p className="marketplace-location-picker-label">Choose a location on the map</p>
-                <MarketplaceLocationPicker
-                  locations={marketplaceLocations}
-                  customLocation={formData.customLocation}
-                  onChooseLocation={handleChooseLocation}
-                  onChooseCustomLocation={handleChooseCustomLocation}
-                />
-                <p className="marketplace-form-note">Select a saved Marketplace pin, or click inside the Bago-Aplaya border to place a custom pin.</p>
-                <label>
-                  Marketplace location
-                  <select
-                    name="locationId"
-                    value={formData.locationId}
-                    onChange={handleInputChange}
-                    disabled={locationsStatus !== 'ready'}
-                  >
-                    <option value="">Choose a saved pin or use the map</option>
-                    {marketplaceLocations.map((location) => (
-                      <option value={location.id} key={location.id}>{location.name}</option>
-                    ))}
-                  </select>
-                </label>
-                {formData.customLocation && (
-                  <p className="marketplace-location-selected" role="status">
-                    Custom pin: {formData.customLocation.lat.toFixed(5)}, {formData.customLocation.lng.toFixed(5)}
-                  </p>
-                )}
-                {mapPickError && <p className="marketplace-feedback marketplace-feedback--error" role="alert">{mapPickError}</p>}
-              </div>
-              {locationsStatus === 'ready' && marketplaceLocations.length === 0 && (
-                <p className="marketplace-form-note">There are no saved Marketplace pins yet. You can still choose a custom point on the map.</p>
-              )}
-              <label>
-                Price
-                <input
-                  name="price"
-                  type="text"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  maxLength="100"
-                  required
-                  placeholder="e.g. ₱150, Free, or negotiable"
-                />
-              </label>
-              <label>
-                Hours
-                <input
-                  name="hours"
-                  type="text"
-                  value={formData.hours}
-                  onChange={handleInputChange}
-                  maxLength="200"
-                  required
-                  placeholder="e.g. Daily, 8 AM–5 PM"
-                />
-              </label>
-              <label>
-                Goods or services
-                <textarea
-                  name="offering"
-                  value={formData.offering}
-                  onChange={handleInputChange}
-                  rows="4"
-                  maxLength="1000"
-                  required
-                  placeholder="Describe what you offer"
-                />
-              </label>
-              <label>
-                Contact method
-                <input
-                  name="contactMethod"
-                  type="text"
-                  value={formData.contactMethod}
-                  onChange={handleInputChange}
-                  maxLength="300"
-                  required
-                  placeholder="Phone, email, or social account"
-                />
-              </label>
-              <p className="marketplace-form-note">Contact details are visible to anyone who can view the marketplace.</p>
-              <button type="submit" disabled={isSaving || !isFormValid}>
-                {isSaving ? (editingListingId ? 'Saving changes…' : 'Publishing…') : editingListingId ? 'Save changes' : 'Publish listing'}
-              </button>
-              {editingListingId && <button className="marketplace-form-cancel" type="button" onClick={handleCancelEdit} disabled={isSaving}>Cancel edit</button>}
-              {saveError && <p className="marketplace-feedback marketplace-feedback--error" role="alert">{saveError}</p>}
-              {saveSuccess && <p className="marketplace-feedback" role="status">{saveSuccessMessage}</p>}
-            </form>
-          ) : (
-            <div className="marketplace-sign-in">
-              <h2 id="marketplace-form-title">Create a listing</h2>
-              <p>Sign in to share goods or services with the community.</p>
-              <button type="button" onClick={onRequestLogin}>Log in to continue</button>
-            </div>
-          )}
-        </aside>
-
         <section className="marketplace-results" aria-labelledby="marketplace-results-title">
           <div className="marketplace-tabs" role="tablist" aria-label="Marketplace sections">
             <button type="button" role="tab" aria-selected={activeTab === 'listings'} onClick={() => setActiveTab('listings')}>
@@ -567,6 +487,19 @@ export default function Marketplace({
                 ))}
               </select>
             </label>
+            <button
+              className="marketplace-create-button"
+              type="button"
+              ref={createListingButtonRef}
+              aria-expanded={isComposeOpen}
+              aria-controls="marketplace-compose-panel"
+              onClick={() => {
+                handleCancelEdit()
+                setIsComposeOpen(true)
+              }}
+            >
+              Create listing
+            </button>
           </div>
 
           {marketplaceListingsStatus === 'loading' && <p className="marketplace-empty" role="status">Loading listings…</p>}
@@ -731,6 +664,151 @@ export default function Marketplace({
           </section>}
         </section>
       </div>
+
+      {isComposeOpen && <>
+        <button
+          className="marketplace-compose-backdrop"
+          type="button"
+          aria-label="Close create listing panel"
+          onClick={() => setIsComposeOpen(false)}
+        />
+        <aside
+          className="marketplace-compose"
+          id="marketplace-compose-panel"
+          ref={composePanelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="marketplace-form-title"
+        >
+          <header className="marketplace-compose-header">
+            <h2 id="marketplace-form-title">{editingListingId ? 'Edit listing' : 'Create a listing'}</h2>
+            <button
+              className="marketplace-compose-close"
+              type="button"
+              ref={closeComposeButtonRef}
+              aria-label="Close create listing panel"
+              onClick={() => setIsComposeOpen(false)}
+            >
+              ×
+            </button>
+          </header>
+          {user ? (
+            <form onSubmit={handleSubmit}>
+              <label>
+                Listing title
+                <input
+                  name="title"
+                  type="text"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  maxLength="100"
+                  required
+                  placeholder="e.g. Fresh vegetables"
+                />
+              </label>
+              <label>
+                Category
+                <select name="category" value={formData.category} onChange={handleInputChange}>
+                  {listingCategories.map((category) => <option key={category}>{category}</option>)}
+                </select>
+              </label>
+              <div className="marketplace-location-picker">
+                <p className="marketplace-location-picker-label">Choose a location on the map</p>
+                <MarketplaceLocationPicker
+                  locations={marketplaceLocations}
+                  customLocation={formData.customLocation}
+                  onChooseLocation={handleChooseLocation}
+                  onChooseCustomLocation={handleChooseCustomLocation}
+                />
+                <p className="marketplace-form-note">Select a saved Marketplace pin, or click inside the Bago-Aplaya border to place a custom pin.</p>
+                <label>
+                  Marketplace location
+                  <select
+                    name="locationId"
+                    value={formData.locationId}
+                    onChange={handleInputChange}
+                    disabled={locationsStatus !== 'ready'}
+                  >
+                    <option value="">Choose a saved pin or use the map</option>
+                    {marketplaceLocations.map((location) => (
+                      <option value={location.id} key={location.id}>{location.name}</option>
+                    ))}
+                  </select>
+                </label>
+                {formData.customLocation && (
+                  <p className="marketplace-location-selected" role="status">
+                    Custom pin: {formData.customLocation.lat.toFixed(5)}, {formData.customLocation.lng.toFixed(5)}
+                  </p>
+                )}
+                {mapPickError && <p className="marketplace-feedback marketplace-feedback--error" role="alert">{mapPickError}</p>}
+              </div>
+              {locationsStatus === 'ready' && marketplaceLocations.length === 0 && (
+                <p className="marketplace-form-note">There are no saved Marketplace pins yet. You can still choose a custom point on the map.</p>
+              )}
+              <label>
+                Price
+                <input
+                  name="price"
+                  type="text"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  maxLength="100"
+                  required
+                  placeholder="e.g. ₱150, Free, or negotiable"
+                />
+              </label>
+              <label>
+                Hours
+                <input
+                  name="hours"
+                  type="text"
+                  value={formData.hours}
+                  onChange={handleInputChange}
+                  maxLength="200"
+                  required
+                  placeholder="e.g. Daily, 8 AM–5 PM"
+                />
+              </label>
+              <label>
+                Goods or services
+                <textarea
+                  name="offering"
+                  value={formData.offering}
+                  onChange={handleInputChange}
+                  rows="4"
+                  maxLength="1000"
+                  required
+                  placeholder="Describe what you offer"
+                />
+              </label>
+              <label>
+                Contact method
+                <input
+                  name="contactMethod"
+                  type="text"
+                  value={formData.contactMethod}
+                  onChange={handleInputChange}
+                  maxLength="300"
+                  required
+                  placeholder="Phone, email, or social account"
+                />
+              </label>
+              <p className="marketplace-form-note">Contact details are visible to anyone who can view the marketplace.</p>
+              <button type="submit" disabled={isSaving || !isFormValid}>
+                {isSaving ? (editingListingId ? 'Saving changes…' : 'Publishing…') : editingListingId ? 'Save changes' : 'Publish listing'}
+              </button>
+              {editingListingId && <button className="marketplace-form-cancel" type="button" onClick={handleCancelEdit} disabled={isSaving}>Cancel edit</button>}
+              {saveError && <p className="marketplace-feedback marketplace-feedback--error" role="alert">{saveError}</p>}
+              {saveSuccess && <p className="marketplace-feedback" role="status">{saveSuccessMessage}</p>}
+            </form>
+          ) : (
+            <div className="marketplace-sign-in">
+              <p>Sign in to share goods or services with the community.</p>
+              <button type="button" onClick={onRequestLogin}>Log in to continue</button>
+            </div>
+          )}
+        </aside>
+      </>}
     </main>
   )
 }
