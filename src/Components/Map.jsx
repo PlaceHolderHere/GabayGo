@@ -237,7 +237,26 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   // Updates selected position
   const handleMapClick = (latlng) => {
     if (routeState) {
-      if (routeState.status === 'selecting') {
+      if (routeState.status === 'selecting-custom-origin') {
+        if (!isInBagoAplaya(latlng)) {
+          setRouteState((current) => ({
+            ...current,
+            status: 'error',
+            error: 'Origin must be within Bago Aplaya.',
+          }));
+          return;
+        }
+        setRouteState((current) => ({
+          ...current,
+          origin: { lat: latlng.lat, lng: latlng.lng, name: 'Custom origin' },
+          status: 'selecting-custom-destination',
+        }));
+        setActivePanelTab('search');
+        setPanelOpen(true);
+        return;
+      }
+
+      if (routeState.status === 'selecting-custom-destination') {
         if (!isInBagoAplaya(latlng)) {
           setRouteState((current) => ({
             ...current,
@@ -248,8 +267,28 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
         }
         setRouteState((current) => ({
           ...current,
-          destination: { lat: latlng.lat, lng: latlng.lng, name: 'Map point' },
-          status: 'loading',
+          destination: { lat: latlng.lat, lng: latlng.lng, name: 'Custom destination' },
+          status: current?.origin ? 'loading' : 'error',
+        }));
+        setActivePanelTab('search');
+        setPanelOpen(true);
+        return;
+      }
+
+      if (routeState.status === 'selecting-origin' || routeState.status === 'selecting') {
+        if (!isInBagoAplaya(latlng)) {
+          setRouteState((current) => ({
+            ...current,
+            status: 'error',
+            error: 'Origin must be within Bago Aplaya.',
+          }));
+          return;
+        }
+        const customOrigin = { lat: latlng.lat, lng: latlng.lng, name: 'Custom location' };
+        setRouteState((current) => ({
+          ...current,
+          origin: customOrigin,
+          status: current?.destination ? 'loading' : 'selecting',
         }));
         setActivePanelTab('search');
         setPanelOpen(true);
@@ -276,13 +315,50 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
     setPanelOpen(true);
   };
 
-  const handleStartRoute = (location) => {
+  const handleClearCustomPin = () => {
+    setSelectedPosition(null);
+    setBoundaryError('');
+  };
+
+  const handleClearCustomRoutePins = () => {
+    setSelectedPosition(null);
+    setRouteState(null);
+  };
+
+  const handleStartRouteFromSelectedPin = () => {
+    if (!selectedPosition) return;
     setSelectedLocationId(null);
     setRouteState({
-      origin: { lat: location.lat, lng: location.lng, name: location.name },
+      origin: { lat: selectedPosition.lat, lng: selectedPosition.lng, name: 'Custom pin' },
       destination: null,
       status: 'selecting',
     });
+    setSelectedPosition(null);
+    setEditingLocationId(null);
+    setActivePanelTab('search');
+    setPanelOpen(true);
+  };
+
+  const handleStartRouteBetweenSelectedPinAndCustomPoint = () => {
+    if (!selectedPosition) return;
+    setSelectedLocationId(null);
+    setRouteState({
+      origin: { lat: selectedPosition.lat, lng: selectedPosition.lng, name: 'Custom pin' },
+      destination: null,
+      status: 'selecting-custom-destination',
+    });
+    setSelectedPosition(null);
+    setEditingLocationId(null);
+    setActivePanelTab('search');
+    setPanelOpen(true);
+  };
+
+  const handleStartRouteFromCustomLocation = (destinationLocation = null) => {
+    setSelectedLocationId(null);
+    const destination = destinationLocation
+      ? { lat: destinationLocation.lat, lng: destinationLocation.lng, name: destinationLocation.name }
+      : null;
+    setRouteState({ origin: null, destination, status: 'selecting-origin' });
     setSelectedPosition(null);
     setEditingLocationId(null);
     setActivePanelTab('search');
@@ -633,20 +709,6 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                 <>
                   {routeState && (
                     <section className="route-panel" aria-label="Driving directions">
-                      <div className="route-panel-header">
-                        <h3>Driving directions</h3>
-                        <button className="map-danger-button" type="button" onClick={() => setRouteState(null)}>Cancel</button>
-                      </div>
-                      <p className="route-endpoint"><strong>From</strong> {routeState.origin?.name || 'Your location'}</p>
-                      {routeState.destination && (
-                        <p className="route-endpoint"><strong>To</strong> {routeState.destination.name}</p>
-                      )}
-                      {routeState.status === 'locating' && (
-                        <p className="map-feedback" role="status">Finding your current location…</p>
-                      )}
-                      {routeState.status === 'selecting' && (
-                        <p className="map-feedback" role="status">Click the map to choose your destination.</p>
-                      )}
                       {routeState.status === 'loading' && (
                         <p className="map-feedback" role="status">Finding a driving route…</p>
                       )}
@@ -669,15 +731,6 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                         </>
                       )}
                     </section>
-                  )}
-                  {!routeState && (
-                    <button
-                      className="route-start-button"
-                      type="button"
-                      onClick={() => handleStartRouteFromCurrentLocation()}
-                    >
-                      Directions from my location
-                    </button>
                   )}
                   <section className="location-filters" aria-label="Search and filter locations">
                     <label>
@@ -719,6 +772,18 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
 
               {activePanelTab === 'create' && (
                 <>
+                  {selectedPosition && (
+                    <div className="marker-details-actions">
+                      <p className="map-subtitle">Directions</p>
+                      <button type="button" onClick={() => handleStartRouteFromCurrentLocation({
+                        lat: selectedPosition.lat,
+                        lng: selectedPosition.lng,
+                        name: 'Custom pin',
+                      })}>Directions from my current location</button>
+                      <button type="button" onClick={handleStartRouteBetweenSelectedPinAndCustomPoint}>Directions to another custom point</button>
+                      <button className="map-danger-button" type="button" onClick={handleClearCustomPin}>Remove custom pin</button>
+                    </div>
+                  )}
                   {canCreateMarkers ? (
                     <form className="add-location-form" onSubmit={handleAddLocation}>
                       <h3>{editingLocationId ? 'Edit marker' : 'Add a location'}</h3>
@@ -955,8 +1020,9 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                       )}
 
                       <div className="marker-details-actions">
-                        <button type="button" onClick={() => handleStartRoute(selectedLocation)}>Directions from here</button>
-                        <button type="button" onClick={() => handleStartRouteFromCurrentLocation(selectedLocation)}>Directions from my location</button>
+                        <p className="map-subtitle">Directions</p>
+                        <button type="button" onClick={() => handleStartRouteFromCustomLocation(selectedLocation)}>Directions from custom location</button>
+                        <button type="button" onClick={() => handleStartRouteFromCurrentLocation(selectedLocation)}>Directions from my current location</button>
                       </div>
 
                       {isAdmin && selectedLocation.category === 'Report' && (
@@ -1077,6 +1143,25 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
               />
             )}
 
+            {routeState?.origin && (
+              <Marker
+                position={[routeState.origin.lat, routeState.origin.lng]}
+                icon={temporaryLocationIcon}
+              >
+                <Popup>
+                  <div className="popup-card popup-card--temporary">
+                    <strong>Origin</strong>
+                    <span>{routeState.origin.name}</span>
+                    {['Custom pin', 'Custom origin', 'Custom location'].includes(routeState.origin.name) && (
+                      <button type="button" className="route-popup-action" onClick={handleClearCustomRoutePins}>
+                        Remove custom pin
+                      </button>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            )}
+
             {routeState?.destination && (
               <Marker
                 position={[routeState.destination.lat, routeState.destination.lng]}
@@ -1086,6 +1171,11 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                   <div className="popup-card popup-card--temporary">
                     <strong>Destination</strong>
                     <span>{routeState.destination.name}</span>
+                    {routeState.destination.name === 'Custom destination' && (
+                      <button type="button" className="route-popup-action" onClick={handleClearCustomRoutePins}>
+                        Remove custom pin
+                      </button>
+                    )}
                   </div>
                 </Popup>
               </Marker>
