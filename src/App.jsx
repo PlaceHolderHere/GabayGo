@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore'
 import { auth, db, demoMode } from './firebase'
 import './App.css'
@@ -40,29 +40,27 @@ function App() {
   })
   const [focusedMapLocation, setFocusedMapLocation] = useState(null)
 
+  const handleNavigate = (nextPage) => {
+    if (nextPage === 'chat' && !user) {
+      setLoginOpen(true)
+      return
+    }
+    setActivePage(nextPage)
+  }
+
   useEffect(() => {
     if (!auth) return undefined
 
     return onAuthStateChanged(auth, (nextUser) => {
-      if (!nextUser && demoMode) {
-        signInAnonymously(auth).catch((signInError) => {
-          setUser(null)
-          if (signInError.code === 'auth/operation-not-allowed') {
-            setDemoAuthError('Anonymous sign-in is disabled. Enable Authentication > Sign-in method > Anonymous in your Firebase project.')
-          } else if (signInError.code === 'auth/unauthorized-domain') {
-            setDemoAuthError('This domain is not authorized. Add localhost or your Netlify domain under Firebase Authentication > Settings > Authorized domains.')
-          } else {
-            setDemoAuthError(`Firebase anonymous sign-in failed (${signInError.code || 'unknown error'}). Check the Anonymous provider, authorized domains, and network access.`)
-          }
-        })
+      setUser(nextUser)
+      if (nextUser) {
+        setDemoAuthError('')
         return
       }
-      setUser(nextUser)
-      if (nextUser) setDemoAuthError('')
-      if (!nextUser) setActivePage('map')
+      setActivePage((currentPage) => (currentPage === 'chat' ? 'map' : currentPage))
     }, (authError) => {
       setUser(null)
-      setActivePage('map')
+      setActivePage((currentPage) => (currentPage === 'chat' ? 'map' : currentPage))
       if (demoMode) setDemoAuthError(`Firebase authentication failed (${authError.code || 'unknown error'}).`)
     })
   }, [])
@@ -263,14 +261,15 @@ function App() {
   const publicLocations = locations.filter((location) => (
     location.category !== 'Community engagement' || location.engagementStatus === 'approved'
   ))
+  const visiblePage = !user && activePage === 'chat' ? 'map' : activePage
 
   return (
     <div className="app-shell">
       <Sidebar
         user={user}
         demoMode={demoMode}
-        activePage={activePage}
-        onNavigate={setActivePage}
+        activePage={visiblePage}
+        onNavigate={handleNavigate}
         onLogin={() => setLoginOpen(true)}
         onSignOut={() => signOut(auth)}
       />
@@ -280,16 +279,16 @@ function App() {
           <strong>Demo access could not start.</strong> {demoAuthError}
         </aside>
       )}
-      {activePage === 'home' && (
+      {visiblePage === 'home' && (
         <Home
           user={user}
           locations={publicLocations}
           locationsStatus={locationsStatus}
-          onNavigate={setActivePage}
+          onNavigate={handleNavigate}
           onRequestLogin={() => setLoginOpen(true)}
         />
       )}
-      {activePage === 'profile' && (
+      {visiblePage === 'profile' && (
         <UserProfile
           key={user?.uid || 'signed-out'}
           user={user}
@@ -297,7 +296,7 @@ function App() {
           onRequestLogin={() => setLoginOpen(true)}
         />
       )}
-      {activePage === 'updates' && (
+      {visiblePage === 'updates' && (
         <Updates
           key={user?.uid || 'signed-out'}
           user={user}
@@ -307,11 +306,11 @@ function App() {
           schedules={schedules}
           schedulesStatus={schedulesStatus}
           schedulesError={schedulesError}
-          onNavigate={setActivePage}
+          onNavigate={handleNavigate}
           onRequestLogin={() => setLoginOpen(true)}
         />
       )}
-      {activePage === 'calendar' && (
+      {visiblePage === 'calendar' && (
         <Calendar
           key={user?.uid || 'signed-out'}
           user={user}
@@ -325,7 +324,7 @@ function App() {
           onRequestLogin={() => setLoginOpen(true)}
         />
       )}
-      {activePage === 'marketplace' && (
+      {visiblePage === 'marketplace' && (
         <Marketplace
           user={user}
           locations={publicLocations}
@@ -341,7 +340,7 @@ function App() {
           }}
         />
       )}
-      {activePage === 'map' && (
+      {visiblePage === 'map' && (
         <MapPage
           key={focusedMapLocation?.id || (focusedMapLocation ? `custom-${focusedMapLocation.lat}-${focusedMapLocation.lng}` : 'map')}
           user={user}
@@ -351,14 +350,14 @@ function App() {
           onRequestLogin={() => setLoginOpen(true)}
           focusedMapLocation={focusedMapLocation}
           demoMode={demoMode}
-          onNavigate={setActivePage}
+          onNavigate={handleNavigate}
         />
       )}
       <Chat
         locations={publicLocations}
         locationsStatus={locationsStatus}
         locationsError={locationsError}
-        hidden={activePage !== 'chat'}
+        hidden={visiblePage !== 'chat'}
       />
       </main>
       <UrgentNotifications

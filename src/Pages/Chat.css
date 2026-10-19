@@ -63,24 +63,27 @@
 
 .chat-message {
   width: min(78%, 680px);
-  padding: 0.75rem 0.9rem;
-  border-left: 3px solid var(--color-gold);
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(99, 63, 56, 0.12);
+  border-radius: 1.25rem 1.25rem 1.25rem 0.5rem;
   background: var(--color-soft);
+  box-shadow: 0 8px 18px rgba(99, 63, 56, 0.08);
 }
 
 .chat-message--user {
   align-self: flex-end;
-  border-left: 0;
-  border-right: 3px solid var(--color-brown);
+  border-color: rgba(67, 132, 91, 0.18);
+  border-radius: 1.25rem 1.25rem 0.5rem 1.25rem;
   background: color-mix(in srgb, #43845b 12%, var(--color-cream));
 }
 
 .chat-message-label {
   display: block;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
   color: var(--color-muted);
   font-size: 0.66rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
