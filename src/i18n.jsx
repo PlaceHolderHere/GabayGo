@@ -53,6 +53,68 @@ const translations = {
     'Hours:': 'Oras:',
     'Official source': 'Opisyal na sanggunian',
     'Open city portal': 'Buksan ang portal ng lungsod',
+    'Local weather & tide': 'Lokal na panahon at tubig',
+    'Tide': 'Alon / tubig',
+    'Weather': 'Panahon',
+    'Wind': 'Hangin',
+    'Sea': 'Dagat',
+    'Coastal breeze': 'Hangin sa baybayin',
+    'Humidity': 'Halumigmig',
+    'Rain chance': 'Tsansa ng ulan',
+    'Wave height': 'Taas ng alon',
+    'Tide info currently unavailable': 'Hindi kasalukuyang available ang impormasyon ng tubig',
+    'Tide info unavailable': 'Hindi available ang impormasyon ng tubig',
+    'High tide': 'Mataas na tubig',
+    'Low tide': 'Mababang tubig',
+    'Rising tide': 'Tumataas na tubig',
+    'Falling tide': 'Bumababa na tubig',
+    'Sea level is steadily easing upward.': 'Patuloy na tumataas ang antas ng dagat.',
+    'The water is peaking near the shore.': 'Nasa taas na ang tubig sa baybayin.',
+    'The shoreline is at its lowest point.': 'Nasa pinakamababang punto ang baybayin.',
+    'Sea level is climbing and moving back up.': 'Patuloy na tumataas ang antas ng dagat.',
+    'Sea level is going out after the peak.': 'Bababa ang tubig pagkatapos ng mataas na punto.',
+    'Next high tide': 'Susunod na mataas na tubig',
+    'Next low tide': 'Susunod na mababang tubig',
+    'Tide pattern is being updated.': 'Ina-update ang pattern ng tubig.',
+    'Tide pattern updating': 'Ina-update ang pattern ng tubig',
+    'Checking local tide patterns.': 'Sinusuri ang lokal na pattern ng tubig.',
+    'Weather info': 'Impormasyon sa panahon',
+    '% rain chance': '% tsansa ng ulan',
+    '% humidity': '% halumigmig',
+    'Clear sky': 'Malinaw na langit',
+    'Mostly clear': 'Kalahati ay malinaw',
+    'Partly cloudy': 'May bahagyang ulap',
+    'Cloudy': 'Maulap',
+    'Foggy': 'Makulimlim',
+    'Rime fog': 'Rime fog',
+    'Light drizzle': 'Magkikitang ambon',
+    'Drizzle': 'Ambon',
+    'Heavy drizzle': 'Mabigat na ambon',
+    'Freezing drizzle': 'Nagyeyelong ambon',
+    'Heavy freezing drizzle': 'Mabigat na nagye-yelong ambon',
+    'Light rain': 'Magkikitang ulan',
+    'Rain': 'Ulan',
+    'Heavy rain': 'Mabigat na ulan',
+    'Freezing rain': 'Nagyeyelong ulan',
+    'Heavy freezing rain': 'Mabigat na nagye-yelong ulan',
+    'Light snow': 'Magkikitang niyebe',
+    'Snow': 'Niyebe',
+    'Heavy snow': 'Mabigat na niyebe',
+    'Snow grains': 'Maliit na niyebe',
+    'Rain showers': 'Maulap na pag-ulan',
+    'Heavy showers': 'Mabigat na pag-ulan',
+    'Violent showers': 'Mabagsik na pag-ulan',
+    'Snow showers': 'Pag-ulan ng niyebe',
+    'Heavy snow showers': 'Mabigat na pag-ulan ng niyebe',
+    'Thunderstorm': 'Bagyo',
+    'Thunderstorm with hail': 'Bagyo na may granizo',
+    'Severe thunderstorm': 'Malakas na bagyo',
+    'Conditions changing': 'Nagbabago ang kondisyon',
+    'This public local weather feed does not include a live tide station for Bago Aplaya yet.': 'Ang pampublikong lokal na feed ng panahon na ito ay wala pang live tide station para sa Bago Aplaya.',
+    'Check a local marine bulletin or barangay update for exact tide timing.': 'Suriin ang lokal na marine bulletin o update ng barangay para sa eksaktong oras ng tubig.',
+    'Live coastal data is currently unavailable. Please check back shortly.': 'Hindi kasalukuyang available ang live coastal data. Pakisubukan muli sa ilang sandali.',
+    'Refresh coastal condition data': 'I-refresh ang data ng kondisyon sa baybayin',
+    'Refreshing coastal condition data': 'Ni-refresh ang data ng kondisyon sa baybayin',
     'Community update': 'Update ng komunidad',
     'Open the updates page for more information.': 'Buksan ang pahina ng mga update para sa karagdagang impormasyon.',
     'See full update': 'Tingnan ang buong update',
@@ -496,6 +558,68 @@ const translations = {
     'Hours:': 'Oras:',
     'Official source': 'Opisyal nga tinubdan',
     'Open city portal': 'Ablihi ang portal sa siyudad',
+    'Local weather & tide': 'Lokal nga panahon ug tubig',
+    'Tide': 'Tubig / balod',
+    'Weather': 'Panahon',
+    'Wind': 'Hangin',
+    'Sea': 'Dagat',
+    'Coastal breeze': 'Hangin sa baybayon',
+    'Humidity': 'Halumigmig',
+    'Rain chance': 'Tsansa sa ulan',
+    'Wave height': 'Gitas-on sa balod',
+    'Tide info currently unavailable': 'Wala kasamtangan magamit ang impormasyon sa tubig',
+    'Tide info unavailable': 'Wala magamit ang impormasyon sa tubig',
+    'High tide': 'Taas nga tubig',
+    'Low tide': 'Ubos nga tubig',
+    'Rising tide': 'Nagsaka nga tubig',
+    'Falling tide': 'Nagpaubos nga tubig',
+    'Sea level is steadily easing upward.': 'Padayon nga nagsaka ang lebel sa dagat.',
+    'The water is peaking near the shore.': 'Nakasaka na ang tubig duol sa baybayon.',
+    'The shoreline is at its lowest point.': 'Nakasaka ang baybayon sa ubos nga punto.',
+    'Sea level is climbing and moving back up.': 'Padayon nga nagsaka ang lebel sa dagat.',
+    'Sea level is going out after the peak.': 'Mopaubos ang tubig human sa taas nga punto.',
+    'Next high tide': 'Sunod nga taas nga tubig',
+    'Next low tide': 'Sunod nga ubos nga tubig',
+    'Tide pattern is being updated.': 'Gi-update ang pattern sa tubig.',
+    'Tide pattern updating': 'Gi-update ang pattern sa tubig',
+    'Checking local tide patterns.': 'Ginasusi ang lokal nga pattern sa tubig.',
+    'Weather info': 'Impormasyon sa panahon',
+    '% rain chance': '% tsansa sa ulan',
+    '% humidity': '% halumigmig',
+    'Clear sky': 'Hayag nga langit',
+    'Mostly clear': 'Kadaghanan hayag',
+    'Partly cloudy': 'Medyo maulap',
+    'Cloudy': 'Maulap',
+    'Foggy': 'Mabukob',
+    'Rime fog': 'Rime fog',
+    'Light drizzle': 'Halin nga ambon',
+    'Drizzle': 'Ambon',
+    'Heavy drizzle': 'Bug-at nga ambon',
+    'Freezing drizzle': 'Nagyelo nga ambon',
+    'Heavy freezing drizzle': 'Bug-at nga nagyelo nga ambon',
+    'Light rain': 'Halin nga ulan',
+    'Rain': 'Ulan',
+    'Heavy rain': 'Bug-at nga ulan',
+    'Freezing rain': 'Nagyelo nga ulan',
+    'Heavy freezing rain': 'Bug-at nga nagyelo nga ulan',
+    'Light snow': 'Halin nga niyebe',
+    'Snow': 'Niyebe',
+    'Heavy snow': 'Bug-at nga niyebe',
+    'Snow grains': 'Gamay nga niyebe',
+    'Rain showers': 'Pag-ulan',
+    'Heavy showers': 'Bug-at nga pag-ulan',
+    'Violent showers': 'Grabe nga pag-ulan',
+    'Snow showers': 'Pag-ulan sa niyebe',
+    'Heavy snow showers': 'Bug-at nga pag-ulan sa niyebe',
+    'Thunderstorm': 'Bagyo',
+    'Thunderstorm with hail': 'Bagyo nga adunay graniso',
+    'Severe thunderstorm': 'Grabe nga bagyo',
+    'Conditions changing': 'Nagbag-o ang kahimtang',
+    'This public local weather feed does not include a live tide station for Bago Aplaya yet.': 'Kini nga pampublikong lokal nga feed sa panahon wala pa gyud naglakip og live tide station para sa Bago Aplaya.',
+    'Check a local marine bulletin or barangay update for exact tide timing.': 'Susiha ang lokal nga marine bulletin o update sa barangay para sa eksaktong oras sa tubig.',
+    'Live coastal data is currently unavailable. Please check back shortly.': 'Wala kasamtangan magamit ang live coastal data. Palihug balik sa makadiyot.',
+    'Refresh coastal condition data': 'I-refresh ang data sa kahimtang sa baybayon',
+    'Refreshing coastal condition data': 'Girefresh ang data sa kahimtang sa baybayon',
     'Community update': 'Update sa komunidad',
     'Open the updates page for more information.': 'Ablihi ang panid sa mga update para sa dugang impormasyon.',
     'See full update': 'Tan-awa ang tibuok update',
@@ -897,6 +1021,32 @@ function translateText(text, language) {
 
   const starts = normalizedText.match(/^Starts (.+)$/)
   if (starts) return withWhitespace(`${dictionary.Starts} ${starts[1]}`)
+
+  const nextHighTide = normalizedText.match(/^Next high tide (.+)$/)
+  if (nextHighTide) {
+    return withWhitespace(language === 'filipino'
+      ? `Susunod na mataas na tubig ${nextHighTide[1]}`
+      : `Sunod nga taas nga tubig ${nextHighTide[1]}`)
+  }
+
+  const nextLowTide = normalizedText.match(/^Next low tide (.+)$/)
+  if (nextLowTide) {
+    return withWhitespace(language === 'filipino'
+      ? `Susunod na mababang tubig ${nextLowTide[1]}`
+      : `Sunod nga ubos nga tubig ${nextLowTide[1]}`)
+  }
+
+  const rainChance = normalizedText.match(/^(\d+)% rain chance$/)
+  if (rainChance) {
+    return withWhitespace(language === 'filipino'
+      ? `${rainChance[1]}% tsansa ng ulan`
+      : `${rainChance[1]}% tsansa sa ulan`)
+  }
+
+  const humidityMatch = normalizedText.match(/^(\d+|--)% humidity$/)
+  if (humidityMatch) {
+    return withWhitespace(`${humidityMatch[1]}% halumigmig`)
+  }
 
   const urgentAlerts = normalizedText.match(/^Urgent alerts \((\d+) active\)$/)
   if (urgentAlerts) return withWhitespace(`${dictionary['Urgent alerts']} (${urgentAlerts[1]} ${dictionary.active})`)
