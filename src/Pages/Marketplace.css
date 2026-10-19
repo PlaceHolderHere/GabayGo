@@ -240,14 +240,25 @@
   min-width: 0;
 }
 
-.marketplace-tabs {
+.marketplace-tabs,
+.marketplace-listing-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.25rem;
-  margin-bottom: 0.85rem;
   border-bottom: 1px solid var(--color-line);
 }
 
-.marketplace-tabs button {
+.marketplace-tabs {
+  margin-bottom: 0.85rem;
+}
+
+.marketplace-listing-tabs {
+  margin-top: 0.25rem;
+  background: var(--color-soft);
+}
+
+.marketplace-tabs button,
+.marketplace-listing-tabs button {
   min-height: 2.5rem;
   padding: 0.5rem 0.8rem;
   border: 0;
@@ -260,7 +271,8 @@
   cursor: pointer;
 }
 
-.marketplace-tabs button[aria-selected="true"] {
+.marketplace-tabs button[aria-selected="true"],
+.marketplace-listing-tabs button[aria-selected="true"] {
   border-bottom-color: var(--color-green);
   color: var(--color-brown);
 }

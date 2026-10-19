@@ -102,7 +102,7 @@ export default function Marketplace({
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveSuccessMessage, setSaveSuccessMessage] = useState('')
   const [deleteFeedback, setDeleteFeedback] = useState({ listingId: null, status: '', error: '' })
-  const [activeTab, setActiveTab] = useState('listings')
+  const [activeTab, setActiveTab] = useState('approved')
   const [isComposeOpen, setIsComposeOpen] = useState(false)
   const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' })
   const [buyerOrderSnapshot, setBuyerOrderSnapshot] = useState({ uid: null, orders: [] })
@@ -197,7 +197,16 @@ export default function Marketplace({
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
   const visibleListings = marketplaceListings
     .filter((listing) => {
-      if (listing.active === false && listing.createdBy !== user?.uid && adminStatus !== 'admin') return false
+      const isOwner = listing.createdBy === user?.uid
+      const approvalStatus = listing.approvalStatus || 'underReview'
+      const matchesStatus = activeTab === 'approved'
+        ? listing.active !== false && approvalStatus === 'approved'
+        : activeTab === 'underReview'
+          ? listing.active !== false && approvalStatus === 'underReview' && (isOwner || adminStatus === 'admin')
+          : activeTab === 'denied'
+            ? listing.active !== false && approvalStatus === 'denied' && (isOwner || adminStatus === 'admin')
+            : activeTab === 'delisted' && listing.active === false && isOwner
+      if (!matchesStatus) return false
       const location = listing.customLocation || locationById.get(listing.locationId)
       if (!location) return false
       const matchesCategory = categoryFilter === 'All' || listing.category === categoryFilter
@@ -261,6 +270,17 @@ export default function Marketplace({
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (!db || !user || isSaving || !hasValidLocation) return
+    if (editingListingId) {
+      const listing = marketplaceListings.find((item) => item.id === editingListingId)
+      if (
+        !listing
+        || listing.createdBy !== user.uid
+        || ['approved', 'denied'].includes(listing.approvalStatus)
+      ) {
+        setSaveError('Only your listings awaiting approval can be edited.')
+        return
+      }
+    }
 
     setIsSaving(true)
     setSaveError('')
@@ -308,6 +328,12 @@ export default function Marketplace({
   }
 
   const handleEditListing = (listing) => {
+    if (
+      !user
+      || listing.createdBy !== user.uid
+      || ['approved', 'denied'].includes(listing.approvalStatus)
+    ) return
+
     setIsComposeOpen(true)
     setEditingListingId(listing.id)
     setFormData({
@@ -353,7 +379,16 @@ export default function Marketplace({
   }
 
   const handleReviewListing = async (listing, approvalStatus) => {
-    if (!db || adminStatus !== 'admin') return
+    const isAllowedReviewAction = (
+      activeTab === 'approved'
+      && listing.approvalStatus === 'approved'
+      && approvalStatus === 'denied'
+    ) || (
+      activeTab === 'denied'
+      && listing.approvalStatus === 'denied'
+      && approvalStatus === 'approved'
+    )
+    if (!db || adminStatus !== 'admin' || listing.active === false || !isAllowedReviewAction) return
     setOrderAction({ orderId: listing.id, status: 'reviewing', error: '' })
     try {
       await updateDoc(doc(db, 'MarketplaceListings', listing.id), {
@@ -445,18 +480,28 @@ export default function Marketplace({
       <div className="marketplace-layout">
         <section className="marketplace-results" aria-labelledby="marketplace-results-title">
           <div className="marketplace-tabs" role="tablist" aria-label="Marketplace sections">
-            <button type="button" role="tab" aria-selected={activeTab === 'listings'} onClick={() => setActiveTab('listings')}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab !== 'orders'}
+              onClick={() => setActiveTab(activeTab === 'orders' ? 'approved' : activeTab)}
+            >
               Listings
             </button>
             <button type="button" role="tab" aria-selected={activeTab === 'orders'} onClick={() => setActiveTab('orders')}>
               Orders <span>{orders.length}</span>
             </button>
           </div>
-          {activeTab === 'listings' ? <>
+          {activeTab !== 'orders' ? <>
           <header className="marketplace-results-header">
             <div>
-              <h2 id="marketplace-results-title">Community listings</h2>
-              <p>{visibleListings.length} of {marketplaceListings.length} listings</p>
+              <h2 id="marketplace-results-title">
+                {activeTab === 'approved' ? 'Approved listings'
+                  : activeTab === 'underReview' ? 'Pending approval'
+                    : activeTab === 'denied' ? 'Denied listings'
+                      : 'Delisted listings'}
+              </h2>
+              <p>{visibleListings.length} listings</p>
             </div>
           </header>
 
@@ -502,13 +547,32 @@ export default function Marketplace({
             </button>
           </div>
 
+          <div className="marketplace-listing-tabs" role="tablist" aria-label="Listing approval status">
+            <button type="button" role="tab" aria-selected={activeTab === 'approved'} onClick={() => setActiveTab('approved')}>
+              Approved listings
+            </button>
+            {user && <>
+              <button type="button" role="tab" aria-selected={activeTab === 'underReview'} onClick={() => setActiveTab('underReview')}>
+                Pending approval
+              </button>
+              <button type="button" role="tab" aria-selected={activeTab === 'denied'} onClick={() => setActiveTab('denied')}>
+                Denied
+              </button>
+              <button type="button" role="tab" aria-selected={activeTab === 'delisted'} onClick={() => setActiveTab('delisted')}>
+                Delisted
+              </button>
+            </>}
+          </div>
+
           {marketplaceListingsStatus === 'loading' && <p className="marketplace-empty" role="status">Loading listings…</p>}
           {marketplaceListingsStatus === 'unavailable' && <p className="marketplace-empty">Connect Firebase to browse marketplace listings.</p>}
           {marketplaceListingsStatus === 'error' && <p className="marketplace-empty marketplace-empty--error" role="alert">{marketplaceListingsError}</p>}
           {locationsStatus === 'error' && <p className="marketplace-empty marketplace-empty--error" role="alert">Marketplace locations could not be loaded.</p>}
           {marketplaceListingsStatus === 'ready' && visibleListings.length === 0 && (
             <p className="marketplace-empty" role="status">
-              {marketplaceListings.length === 0 ? 'No listings yet.' : 'No listings match these filters.'}
+              {marketplaceListings.length === 0 && activeTab === 'approved'
+                ? 'No approved listings yet.'
+                : `No ${activeTab === 'underReview' ? 'pending approval' : activeTab} listings match these filters.`}
             </p>
           )}
           {marketplaceListingsStatus === 'ready' && visibleListings.length > 0 && (
@@ -569,9 +633,9 @@ export default function Marketplace({
                     {user?.uid === listing.createdBy && (
                       <div className="marketplace-listing-owner-actions">
                         <div className="marketplace-listing-button-group">
-                        <button className="marketplace-secondary-button" type="button" onClick={() => handleEditListing(listing)}>
+                        {!['approved', 'denied'].includes(listing.approvalStatus) && <button className="marketplace-secondary-button" type="button" onClick={() => handleEditListing(listing)}>
                           Edit listing
-                        </button>
+                        </button>}
                         {listing.active !== false ? <button
                           className="marketplace-secondary-button"
                           type="button"
@@ -606,11 +670,18 @@ export default function Marketplace({
                         {orderAction.orderId === listing.id && orderAction.error && <p className="marketplace-feedback marketplace-feedback--error" role="alert">{orderAction.error}</p>}
                       </div>
                     )}
-                    {adminStatus === 'admin' && (
+                    {adminStatus === 'admin' && activeTab === 'approved' && listing.approvalStatus === 'approved' && (
+                      <div className="marketplace-listing-owner-actions">
+                        <div className="marketplace-listing-button-group">
+                          <button className="marketplace-delete-button" type="button" onClick={() => handleReviewListing(listing, 'denied')} disabled={orderAction.status === 'reviewing'}>Deny</button>
+                        </div>
+                        {orderAction.orderId === listing.id && orderAction.error && <p className="marketplace-feedback marketplace-feedback--error" role="alert">{orderAction.error}</p>}
+                      </div>
+                    )}
+                    {adminStatus === 'admin' && activeTab === 'denied' && listing.approvalStatus === 'denied' && (
                       <div className="marketplace-listing-owner-actions">
                         <div className="marketplace-listing-button-group">
                           <button className="marketplace-secondary-button" type="button" onClick={() => handleReviewListing(listing, 'approved')} disabled={orderAction.status === 'reviewing'}>Approve</button>
-                          <button className="marketplace-delete-button" type="button" onClick={() => handleReviewListing(listing, 'denied')} disabled={orderAction.status === 'reviewing'}>Deny</button>
                         </div>
                         {orderAction.orderId === listing.id && orderAction.error && <p className="marketplace-feedback marketplace-feedback--error" role="alert">{orderAction.error}</p>}
                       </div>

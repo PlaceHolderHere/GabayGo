@@ -377,7 +377,10 @@ service cloud.firestore {
     }
 
     match /MarketplaceListings/{listingId} {
-      allow read: if true;
+      allow read: if (request.auth != null && resource.data.createdBy == request.auth.uid)
+        || (isAdmin() && resource.data.get('active', true) != false)
+        || (resource.data.get('approvalStatus', 'underReview') == 'approved'
+          && resource.data.get('active', true) == true);
       allow create: if request.auth != null
         && validMarketplaceListing(request.resource.data)
         && request.resource.data.createdBy == request.auth.uid

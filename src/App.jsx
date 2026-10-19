@@ -32,9 +32,12 @@ function App() {
   const [schedules, setSchedules] = useState([])
   const [schedulesStatus, setSchedulesStatus] = useState(db ? 'loading' : 'unavailable')
   const [schedulesError, setSchedulesError] = useState('')
-  const [marketplaceListings, setMarketplaceListings] = useState([])
-  const [marketplaceListingsStatus, setMarketplaceListingsStatus] = useState(db ? 'loading' : 'unavailable')
-  const [marketplaceListingsError, setMarketplaceListingsError] = useState('')
+  const [marketplaceListingsState, setMarketplaceListingsState] = useState({
+    key: null,
+    listings: [],
+    status: db ? 'loading' : 'unavailable',
+    error: '',
+  })
   const [focusedMapLocation, setFocusedMapLocation] = useState(null)
 
   useEffect(() => {
@@ -92,6 +95,13 @@ function App() {
 
   const isDemoAdmin = demoMode && user?.isAnonymous === true
   const isAdmin = isDemoAdmin || (adminCheck.uid === user?.uid && adminCheck.status === 'admin')
+  const marketplaceSourceKey = `${user?.uid ?? 'signed-out'}:${isAdmin ? 'admin' : 'member'}`
+  const hasCurrentMarketplaceListings = marketplaceListingsState.key === marketplaceSourceKey
+  const marketplaceListings = hasCurrentMarketplaceListings ? marketplaceListingsState.listings : []
+  const marketplaceListingsStatus = hasCurrentMarketplaceListings
+    ? marketplaceListingsState.status
+    : db ? 'loading' : 'unavailable'
+  const marketplaceListingsError = hasCurrentMarketplaceListings ? marketplaceListingsState.error : ''
   const locationsSourceKey = `${user?.uid ?? 'signed-out'}:${isAdmin ? 'admin' : 'member'}`
   const hasCurrentLocationsLoad = locationsLoadState.key === locationsSourceKey
   const locationsStatus = hasCurrentLocationsLoad
@@ -174,15 +184,64 @@ function App() {
   useEffect(() => {
     if (!db) return undefined
 
-    return onSnapshot(collection(db, 'MarketplaceListings'), (snapshot) => {
-      setMarketplaceListings(snapshot.docs.map((listingDoc) => ({ id: listingDoc.id, ...listingDoc.data() })))
-      setMarketplaceListingsStatus('ready')
-      setMarketplaceListingsError('')
+    const sourceData = new Map()
+    const completedSources = new Set()
+    const failedSources = new Set()
+    const sources = isAdmin
+      ? [{
+        id: 'admin-active',
+        query: query(collection(db, 'MarketplaceListings'), where('active', '==', true)),
+      }]
+      : [{
+        id: 'approved',
+        query: query(
+          collection(db, 'MarketplaceListings'),
+          where('approvalStatus', '==', 'approved'),
+          where('active', '==', true),
+        ),
+      }]
+
+    if (user?.uid) {
+      sources.push({
+        id: 'own',
+        query: query(collection(db, 'MarketplaceListings'), where('createdBy', '==', user.uid)),
+      })
+    }
+
+    const handleSourceComplete = () => {
+      const isComplete = completedSources.size === sources.length
+      setMarketplaceListingsState((currentState) => ({
+        key: marketplaceSourceKey,
+        listings: currentState.key === marketplaceSourceKey ? currentState.listings : [],
+        status: isComplete ? failedSources.size > 0 ? 'error' : 'ready' : 'loading',
+        error: isComplete && failedSources.size > 0
+          ? 'Marketplace listings could not be loaded. Check Firestore rules and try again.'
+          : '',
+      }))
+    }
+
+    const unsubscribes = sources.map(({ id, query: listingsQuery }) => onSnapshot(listingsQuery, (snapshot) => {
+      sourceData.set(id, snapshot.docs.map((listingDoc) => ({ id: listingDoc.id, ...listingDoc.data() })))
+      completedSources.add(id)
+      const combinedListings = new Map()
+      sourceData.forEach((listings) => listings.forEach((listing) => combinedListings.set(listing.id, listing)))
+      const isComplete = completedSources.size === sources.length
+      setMarketplaceListingsState({
+        key: marketplaceSourceKey,
+        listings: [...combinedListings.values()],
+        status: isComplete ? failedSources.size > 0 ? 'error' : 'ready' : 'loading',
+        error: isComplete && failedSources.size > 0
+          ? 'Marketplace listings could not be loaded. Check Firestore rules and try again.'
+          : '',
+      })
     }, () => {
-      setMarketplaceListingsStatus('error')
-      setMarketplaceListingsError('Marketplace listings could not be loaded. Check Firestore rules and try again.')
-    })
-  }, [])
+      failedSources.add(id)
+      completedSources.add(id)
+      handleSourceComplete()
+    }))
+
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe())
+  }, [user?.uid, isAdmin, marketplaceSourceKey])
 
   useEffect(() => {
     if (!db) return undefined
