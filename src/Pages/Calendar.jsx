@@ -13,6 +13,8 @@ import {
   describeEvent,
 } from '../utils/eventUtils'
 import './Calendar.css'
+import { LocalizedContent, PreservedContent } from '../i18n'
+import { getDateLocale, useLanguage } from '../language'
 
 export default function Calendar({
   user,
@@ -25,6 +27,8 @@ export default function Calendar({
   onNavigate,
   onRequestLogin,
 }) {
+  const { language } = useLanguage()
+  const dateLocale = getDateLocale(language)
   const [currentTime, setCurrentTime] = useState(() => Date.now())
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const today = new Date()
@@ -162,6 +166,7 @@ export default function Calendar({
   }
 
   return (
+    <LocalizedContent>
     <main className="calendar-page">
       <div className="calendar-container">
         <header className="calendar-page-header">
@@ -249,7 +254,7 @@ export default function Calendar({
                 <ChevronLeft size={18} aria-hidden="true" />
               </button>
               <h2 className="calendar-month-heading" aria-live="polite">
-                {visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                {visibleMonth.toLocaleDateString(dateLocale, { month: 'long', year: 'numeric' })}
               </h2>
               <button
                 type="button"
@@ -339,7 +344,7 @@ export default function Calendar({
                           className={`calendar-day${isCurrentMonth ? '' : ' calendar-day--outside'}${isToday ? ' calendar-day--today' : ''}${isSelected ? ' calendar-day--selected' : ''}`}
                           type="button"
                           role="gridcell"
-                          aria-label={`${date.toLocaleDateString()}`}
+                          aria-label={`${date.toLocaleDateString(dateLocale)}`}
                           aria-pressed={isSelected}
                           key={key}
                           onClick={() => {
@@ -368,7 +373,9 @@ export default function Calendar({
                         onClick={() => selectEvent(event)}
                       >
                         {continuesBefore ? '‹ ' : ''}
-                        {event.kind === 'scheduled' ? event.title : describeEvent(event)}
+                        {event.kind === 'scheduled'
+                          ? <PreservedContent>{event.title}</PreservedContent>
+                          : describeEvent(event)}
                         {continuesAfter ? ' ›' : ''}
                       </button>
                     ))}
@@ -390,5 +397,6 @@ export default function Calendar({
         />
       )}
     </main>
+    </LocalizedContent>
   )
 }

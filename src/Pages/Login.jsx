@@ -3,6 +3,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { auth } from '../firebase'
 import logo from '../assets/Logo.svg'
 import './Login.css'
+import { LocalizedContent } from '../i18n'
 
 export default function Login({ onClose }) {
 	const [error, setError] = useState('')
@@ -40,6 +41,7 @@ export default function Login({ onClose }) {
 	}
 
 	return (
+		<LocalizedContent>
 		<div className="login-backdrop" onClick={onClose}>
 			<section
 				className="login-dialog"
@@ -76,5 +78,6 @@ export default function Login({ onClose }) {
 				<p className="login-terms">You can browse the map without signing in.</p>
 			</section>
 		</div>
+		</LocalizedContent>
 	)
 }

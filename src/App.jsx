@@ -14,8 +14,11 @@ import UserProfile from './Pages/UserProfile'
 import Chat from './Pages/Chat'
 import UrgentNotifications from './Components/UrgentNotifications'
 import { listenForForegroundMessages } from './notifications'
+import { isSupportedLanguage, LanguageProvider, useLanguage } from './language'
+import { LocalizedContent } from './i18n'
 
-function App() {
+function AppContent() {
+  const { language, setLanguage } = useLanguage()
   const [user, setUser] = useState(null)
   const [demoAuthError, setDemoAuthError] = useState(() => (
     demoMode && !auth ? 'Firebase is not configured. Add the Firebase environment variables and restart the app.' : ''
@@ -64,6 +67,17 @@ function App() {
       if (demoMode) setDemoAuthError(`Firebase authentication failed (${authError.code || 'unknown error'}).`)
     })
   }, [])
+
+  useEffect(() => {
+    if (!db || !user?.uid) return undefined
+
+    return onSnapshot(doc(db, 'UserProfiles', user.uid), (profileDoc) => {
+      const savedLanguage = profileDoc.data()?.language
+      if (isSupportedLanguage(savedLanguage)) setLanguage(savedLanguage)
+    }, (error) => {
+      console.error('Could not load the saved GabayGo language preference.', error)
+    })
+  }, [user?.uid, setLanguage])
 
   useEffect(() => {
     let active = true
@@ -264,6 +278,7 @@ function App() {
   const visiblePage = !user && activePage === 'chat' ? 'map' : activePage
 
   return (
+    <LocalizedContent>
     <div className="app-shell">
       <Sidebar
         user={user}
@@ -293,6 +308,8 @@ function App() {
           key={user?.uid || 'signed-out'}
           user={user}
           demoMode={demoMode}
+          language={language}
+          onLanguageChange={setLanguage}
           onRequestLogin={() => setLoginOpen(true)}
         />
       )}
@@ -372,6 +389,15 @@ function App() {
       />
       {loginOpen && <Login onClose={() => setLoginOpen(false)} />}
     </div>
+    </LocalizedContent>
+  )
+}
+
+function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   )
 }
 

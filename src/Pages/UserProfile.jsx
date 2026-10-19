@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { doc, onSnapshot, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import CommunityParticipationForms from '../Components/CommunityParticipationForms'
 import MyCommunityEngagementSignups from '../Components/MyCommunityEngagementSignups'
 import './UserProfile.css'
+import { isSupportedLanguage } from '../language'
+import { LocalizedContent, PreservedContent } from '../i18n'
 
 const languages = [
   { value: 'english', label: 'English' },
   { value: 'filipino', label: 'Filipino' },
-  { value: 'bisaya', label: 'Bisaya' },
+  { value: 'bisaya', label: 'Cebuano (Bisaya)' },
 ]
 
 const defaultProfile = {
@@ -19,11 +21,12 @@ const defaultProfile = {
   language: 'english',
 }
 
-export default function UserProfile({ user, demoMode, onRequestLogin }) {
+export default function UserProfile({ user, demoMode, language, onLanguageChange, onRequestLogin }) {
   const userId = user?.uid
   const isAnonymous = user?.isAnonymous
   const [profile, setProfile] = useState(() => ({
     ...defaultProfile,
+    language,
     status: !db ? 'unavailable' : user ? 'loading' : 'signed-out',
   }))
   const [adminState, setAdminState] = useState(() => ({
@@ -32,6 +35,7 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
   }))
   const [profileError, setProfileError] = useState('')
   const [saveStatus, setSaveStatus] = useState('ready')
+  const [languageSaveStatus, setLanguageSaveStatus] = useState('idle')
   const initializationAttempted = useRef(false)
 
   useEffect(() => {
@@ -41,13 +45,15 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
     const unsubscribeProfile = onSnapshot(doc(db, 'UserProfiles', userId), (snapshot) => {
       hasProfile = snapshot.exists()
       const data = snapshot.data()
-      setProfile({
+      setProfile((current) => ({
+        ...current,
         status: 'ready',
         exists: snapshot.exists(),
         isAdmin: data?.isAdmin === true,
         updateTopics: Array.isArray(data?.updateTopics) ? data.updateTopics : [],
-        language: languages.some(({ value }) => value === data?.language) ? data.language : 'english',
-      })
+        language: isSupportedLanguage(data?.language) ? data.language : current.language,
+      }))
+      if (snapshot.exists() && isSupportedLanguage(data?.language)) onLanguageChange(data.language)
       setProfileError('')
     }, () => {
       setProfile((current) => ({ ...current, status: 'error' }))
@@ -80,7 +86,7 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
       unsubscribeLegacyPreferences()
       unsubscribeAdmin()
     }
-  }, [userId, demoMode, isAnonymous])
+  }, [userId, demoMode, isAnonymous, onLanguageChange])
 
   const isAdmin = (demoMode && isAnonymous === true)
     || (adminState.uid === userId && adminState.status === 'admin')
@@ -106,13 +112,13 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
         userId,
         isAdmin,
         updateTopics: Array.isArray(legacyTopics) ? legacyTopics : [],
-        language: profile.language,
+        language,
         updatedAt: serverTimestamp(),
       })
     }).catch(() => {
       setProfileError('Your profile record could not be initialized. Check Firestore rules and try again.')
     })
-  }, [userId, profile.status, profile.exists, profile.language, roleStatus, isAdmin])
+  }, [userId, profile.status, profile.exists, language, roleStatus, isAdmin])
 
   useEffect(() => {
     if (!db || !userId || profile.status !== 'ready' || !profile.exists
@@ -131,7 +137,7 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
     })
   }, [userId, profile.status, profile.exists, profile.isAdmin, roleStatus, isAdmin])
 
-  const saveProfile = async (updates) => {
+  const saveProfile = useCallback(async (updates) => {
     if (!db || !user || profile.status !== 'ready' || !['admin', 'not-admin'].includes(roleStatus)) {
       throw new Error('Profile settings are not ready to save.')
     }
@@ -143,7 +149,7 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
         userId: user.uid,
         isAdmin,
         updateTopics: updates.updateTopics ?? profile.updateTopics,
-        language: updates.language ?? profile.language,
+        language: updates.language ?? language,
         updatedAt: serverTimestamp(),
       }, { merge: true })
       setSaveStatus('ready')
@@ -152,19 +158,29 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
       setSaveStatus('error')
       throw error
     }
-  }
+  }, [user, profile.status, profile.updateTopics, roleStatus, saveStatus, isAdmin, language])
 
-  const handleSaveLanguage = async () => {
-    try {
-      await saveProfile({ language: profile.language })
-      setProfileError('')
-    } catch {
-      setProfileError('Language preference could not be saved. Check Firestore rules and try again.')
-    }
-  }
+  useEffect(() => {
+    if (languageSaveStatus !== 'pending' || language === profile.language
+      || profile.status !== 'ready' || !['admin', 'not-admin'].includes(roleStatus)
+      || saveStatus === 'saving') return undefined
+
+    const timeoutId = setTimeout(async () => {
+      setLanguageSaveStatus('saving')
+      try {
+        await saveProfile({ language })
+        setLanguageSaveStatus('saved')
+      } catch {
+        setLanguageSaveStatus('error')
+      }
+    }, 3000)
+
+    return () => clearTimeout(timeoutId)
+  }, [languageSaveStatus, language, profile.language, profile.status, roleStatus, saveStatus, saveProfile])
 
   if (!user) {
     return (
+      <LocalizedContent>
       <main className="user-profile-page">
         <section className="user-profile-card user-profile-signed-out">
           <p className="user-profile-eyebrow">Your account</p>
@@ -173,10 +189,12 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
           <button type="button" onClick={onRequestLogin}>Log in</button>
         </section>
       </main>
+      </LocalizedContent>
     )
   }
 
   return (
+    <LocalizedContent>
     <main className="user-profile-page">
       <div className="user-profile-content">
         <header className="user-profile-heading">
@@ -191,8 +209,10 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
               {(user.displayName || user.email || 'U').charAt(0).toLocaleUpperCase()}
             </div>
             <div>
-              <h2 id="user-profile-account-title">{user.displayName || 'Community member'}</h2>
-              {user.email && <p>{user.email}</p>}
+              <h2 id="user-profile-account-title">
+                {user.displayName ? <PreservedContent>{user.displayName}</PreservedContent> : 'Community member'}
+              </h2>
+              {user.email && <p><PreservedContent>{user.email}</PreservedContent></p>}
             </div>
             <span className={`user-profile-role${isAdmin ? ' user-profile-role--admin' : ''}`} role="status">
               {roleStatus === 'checking' ? 'Checking role…' : roleStatus === 'error' ? 'Role unavailable' : isAdmin ? 'Admin' : 'Community member'}
@@ -200,29 +220,25 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
           </div>
 
           <section className="user-profile-language" aria-labelledby="user-profile-language-title">
-            <div>
-              <h2 id="user-profile-language-title">Language</h2>
-              <p>Choose your preferred language for GabayGo.</p>
-            </div>
             <div className="user-profile-language-control">
-              <label htmlFor="user-profile-language">Preferred language</label>
-              <select
-                id="user-profile-language"
-                value={profile.language}
-                onChange={(event) => setProfile((current) => ({ ...current, language: event.target.value }))}
-                disabled={profile.status !== 'ready' || saveStatus === 'saving'}
-              >
-                {languages.map(({ value, label }) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={handleSaveLanguage}
-                disabled={profile.status !== 'ready' || !['admin', 'not-admin'].includes(roleStatus) || saveStatus === 'saving'}
-              >
-                {saveStatus === 'saving' ? 'Saving…' : 'Save language'}
-              </button>
+              <div className="user-profile-language-field">
+                <label htmlFor="user-profile-language">Preferred language</label>
+                <select
+                  id="user-profile-language"
+                  value={language}
+                  onChange={(event) => {
+                    const selectedLanguage = event.target.value
+                    onLanguageChange(selectedLanguage)
+                    setLanguageSaveStatus(selectedLanguage === profile.language ? 'idle' : 'pending')
+                    setProfileError('')
+                  }}
+                  disabled={profile.status !== 'ready' || !['admin', 'not-admin'].includes(roleStatus) || saveStatus === 'saving'}
+                >
+                  {languages.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </section>
           {profileError && <p className="user-profile-feedback" role="alert">{profileError}</p>}
@@ -230,7 +246,7 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
           {profile.status === 'error' && <p className="user-profile-feedback" role="alert">Profile settings are unavailable.</p>}
           {profile.status === 'unavailable' && <p className="user-profile-feedback" role="alert">Firestore is not configured. Profile settings cannot be saved.</p>}
           {roleStatus === 'error' && <p className="user-profile-feedback" role="alert">Your admin role could not be verified. Profile changes are disabled.</p>}
-          {saveStatus === 'error' && <p className="user-profile-feedback" role="alert">The profile could not be saved.</p>}
+          {saveStatus === 'error' && languageSaveStatus !== 'error' && <p className="user-profile-feedback" role="alert">The profile could not be saved.</p>}
         </section>
 
         {profile.status === 'ready' && (
@@ -249,5 +265,6 @@ export default function UserProfile({ user, demoMode, onRequestLogin }) {
         {profile.status === 'ready' && <MyCommunityEngagementSignups user={user} />}
       </div>
     </main>
+    </LocalizedContent>
   )
 }

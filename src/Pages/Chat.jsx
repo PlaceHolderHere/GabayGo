@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Send } from 'lucide-react'
 import { GoogleGenAI } from '@google/genai'
 import './Chat.css'
+import { LocalizedContent, PreservedContent } from '../i18n'
 
 const modelName = 'gemini-3.5-flash-lite'
 const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY
@@ -115,6 +116,7 @@ export default function Chat({ locations, locationsStatus, locationsError, hidde
   }
 
   return (
+    <LocalizedContent>
     <main className="chat-page" hidden={hidden} aria-labelledby="chat-title">
       <header className="chat-header">
         <h1 id="chat-title">GabayGo Assistant</h1>
@@ -125,7 +127,11 @@ export default function Chat({ locations, locationsStatus, locationsError, hidde
           {messages.map((message, index) => (
             <article className={`chat-message chat-message--${message.role}`} key={`${message.role}-${index}`}>
               <span className="chat-message-label">{message.role === 'assistant' ? 'GabayGo AI' : 'You'}</span>
-              <p>{message.text}</p>
+              <p>
+                {index === 0 && message.role === 'assistant'
+                  ? message.text
+                  : <PreservedContent>{message.text}</PreservedContent>}
+              </p>
             </article>
           ))}
           {isSending && <p className="chat-thinking" role="status">Checking GabayGo…</p>}
@@ -175,5 +181,6 @@ export default function Chat({ locations, locationsStatus, locationsError, hidde
         </form>
       </section>
     </main>
+    </LocalizedContent>
   )
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { collection, deleteDoc, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import './CommunityEngagementActions.css'
+import { LocalizedContent, PreservedContent } from '../i18n'
 
 export default function CommunityEngagementActions({
   location,
@@ -111,6 +112,7 @@ export default function CommunityEngagementActions({
   }
 
   return (
+    <LocalizedContent>
     <section className="community-engagement-actions" aria-label="Volunteer for this activity">
       <h3>Volunteer for this activity</h3>
       {signupData ? (
@@ -149,14 +151,15 @@ export default function CommunityEngagementActions({
           {adminSignups.status === 'ready' && adminSignups.items.length === 0 && <p>No one has signed up yet.</p>}
           {adminSignups.items.map((item) => (
             <article className="community-engagement-signup" key={item.id}>
-              <strong>{item.name}</strong>
-              <span>{item.contact}</span>
+              <strong><PreservedContent>{item.name}</PreservedContent></strong>
+              <span><PreservedContent>{item.contact}</PreservedContent></span>
               <span>{item.methods.join(', ')}</span>
-              {item.notes && <span>{item.notes}</span>}
+              {item.notes && <span><PreservedContent>{item.notes}</PreservedContent></span>}
             </article>
           ))}
         </div>
       )}
     </section>
+    </LocalizedContent>
   )
 }

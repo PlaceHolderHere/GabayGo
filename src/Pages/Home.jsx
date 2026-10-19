@@ -7,6 +7,8 @@ import { categoryIcons, defaultIcon } from '../Components/mapIcons'
 import { bagoAplayaMaxBounds } from '../data/bagoAplaya'
 import { officialContacts, officialServices } from '../data/officialResources'
 import { makeEvent } from '../utils/eventUtils'
+import { LocalizedContent, PreservedContent } from '../i18n'
+import { getDateLocale, useLanguage } from '../language'
 import 'leaflet/dist/leaflet.css'
 import './Home.css'
 
@@ -37,12 +39,12 @@ function getLocationTime(location) {
   return timestamp && !Number.isNaN(timestamp.getTime()) ? timestamp.getTime() : 0
 }
 
-function getLocationDate(location) {
+function getLocationDate(location, dateLocale) {
   const date = location.startDate
     ? new Date(`${location.startDate}T00:00:00`)
     : location.createdAt?.toDate?.() || null
   return date && !Number.isNaN(date.getTime())
-    ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    ? date.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })
     : 'Community update'
 }
 
@@ -51,6 +53,8 @@ function phoneHref(number) {
 }
 
 export default function Home({ user, locations, locationsStatus, onNavigate, onRequestLogin }) {
+  const { language } = useLanguage()
+  const dateLocale = getDateLocale(language)
   const [selectedUpdate, setSelectedUpdate] = useState(null)
 
   const updates = [...locations]
@@ -59,6 +63,7 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
     .slice(0, 3)
 
   return (
+    <LocalizedContent>
     <main className="home-page">
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
@@ -196,9 +201,13 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
                 onClick={() => setSelectedUpdate(update)}
               >
                 <span className="home-update-category">{update.category}</span>
-                <span className="home-update-title">{update.name}</span>
-                <span className="home-update-date">{getLocationDate(update)}</span>
-                <span className="home-update-description">{update.description || 'Open the updates page for more information.'}</span>
+                <span className="home-update-title"><PreservedContent>{update.name}</PreservedContent></span>
+                <span className="home-update-date">{getLocationDate(update, dateLocale)}</span>
+                <span className="home-update-description">
+                  {update.description
+                    ? <PreservedContent>{update.description}</PreservedContent>
+                    : 'Open the updates page for more information.'}
+                </span>
                 <span className="home-update-more">See full update <span aria-hidden="true">↗</span></span>
               </button>
             ))}
@@ -227,5 +236,6 @@ export default function Home({ user, locations, locationsStatus, onNavigate, onR
         />
       )}
     </main>
+    </LocalizedContent>
   )
 }

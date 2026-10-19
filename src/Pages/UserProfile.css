@@ -110,21 +110,22 @@
 }
 
 .user-profile-language-control {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 0.5rem;
+  display: grid;
+  gap: 0.4rem;
 }
 
-.user-profile-language-control label {
+.user-profile-language-field {
   display: grid;
   gap: 0.3rem;
+}
+
+.user-profile-language-field label {
   color: var(--color-brown);
   font-size: 0.68rem;
   font-weight: 700;
 }
 
-.user-profile-language-control select {
+.user-profile-language-field select {
   min-width: 9rem;
   height: 2.4rem;
   padding: 0 0.55rem;
@@ -135,7 +136,6 @@
   font-size: 0.75rem;
 }
 
-.user-profile-language-control button,
 .user-profile-signed-out button {
   min-height: 2.4rem;
   padding: 0.5rem 0.75rem;
@@ -146,11 +146,6 @@
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
-}
-
-.user-profile-language-control button:disabled {
-  cursor: wait;
-  opacity: 0.6;
 }
 
 .user-profile-feedback {
@@ -187,12 +182,10 @@
 
   .user-profile-language-control {
     width: 100%;
-    align-items: stretch;
   }
 
-  .user-profile-language-control label,
-  .user-profile-language-control select,
-  .user-profile-language-control button {
+  .user-profile-language-field,
+  .user-profile-language-field select {
     width: 100%;
   }
 }

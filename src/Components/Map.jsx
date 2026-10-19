@@ -18,6 +18,8 @@ import {
 import 'leaflet/dist/leaflet.css';
 import './Map.css';
 import fishingRoutesData from '../data/fishingRoutes.json';
+import { LocalizedContent, PreservedContent } from '../i18n';
+import { getDateLocale, useLanguage } from '../language';
 
 const fishingRoutes = fishingRoutesData.routes.map((route) => route.waypoints
   .filter((waypoint) => Number.isFinite(waypoint.latitude) && Number.isFinite(waypoint.longitude))
@@ -88,9 +90,9 @@ function getTimestampDate(timestamp) {
   return typeof timestamp?.toDate === 'function' ? timestamp.toDate() : null;
 }
 
-function formatUrgentUpdatedAt(location) {
+function formatUrgentUpdatedAt(location, dateLocale) {
   const updatedAt = getTimestampDate(location.updatedAt) || getTimestampDate(location.createdAt);
-  return updatedAt ? updatedAt.toLocaleString() : 'Unavailable';
+  return updatedAt ? updatedAt.toLocaleString(dateLocale) : 'Unavailable';
 }
 
 function getAlertOrder(location, now) {
@@ -135,6 +137,8 @@ function FocusLocation({ location }) {
 }
 
 export default function Map({ user, demoMode, locations, locationsStatus, locationsError, onRequestLogin, focusedMapLocation, onNavigate }) {
+  const { language } = useLanguage();
+  const dateLocale = getDateLocale(language);
   const [adminCheck, setAdminCheck] = useState({ uid: null, status: 'checking' });
   const [saveError, setSaveError] = useState('');
   const [saveMessage, setSaveMessage] = useState('');
@@ -665,6 +669,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
   };
 
   return (
+    <LocalizedContent>
     <div className="map-page">
       <div className="map-stage" id="map">
         {boundaryAlert && (
@@ -972,7 +977,7 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                     <div className="marker-details-inline" aria-label={`Details for ${selectedLocation.name}`}>
                       <header className="marker-details-header">
                         <div>
-                          <h2>{selectedLocation.name}</h2>
+                          <h2><PreservedContent>{selectedLocation.name}</PreservedContent></h2>
                           <p className="map-subtitle">{selectedLocation.category}</p>
                         </div>
                       </header>
@@ -980,13 +985,13 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                       {selectedLocation.description && (
                         <p className={selectedLocation.category === 'Hazard' ? 'marker-details-warning' : 'marker-details-description'}>
                           {selectedLocation.category === 'Hazard' && <strong>Warning: </strong>}
-                          {selectedLocation.description}
+                          <PreservedContent>{selectedLocation.description}</PreservedContent>
                         </p>
                       )}
                       {selectedLocation.category === 'Hazard' && (
                         <dl className="marker-details-facts">
                           <div><dt>Coverage radius</dt><dd>{selectedLocation.hazardRadius || defaultHazardRadius} m</dd></div>
-                          <div><dt>Last updated</dt><dd>{formatUrgentUpdatedAt(selectedLocation)}</dd></div>
+                          <div><dt>Last updated</dt><dd>{formatUrgentUpdatedAt(selectedLocation, dateLocale)}</dd></div>
                         </dl>
                       )}
                       {selectedLocation.category === 'Location' && (selectedLocation.officeHours || selectedLocation.contactInfo) && (
@@ -1005,10 +1010,14 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                         <dl className="marker-details-facts">
                           <div><dt>Opened</dt><dd>{selectedLocation.startDate || 'Not specified'}</dd></div>
                           <div><dt>Status</dt><dd>{selectedLocation.status || (selectedLocation.resolvedAt ? 'Resolved' : 'Submitted')}</dd></div>
-                          {selectedLocation.resolvedAt && <div><dt>Resolved</dt><dd>{selectedLocation.resolvedAt.toDate().toLocaleString()}</dd></div>}
+                          {selectedLocation.resolvedAt && <div><dt>Resolved</dt><dd>{selectedLocation.resolvedAt.toDate().toLocaleString(dateLocale)}</dd></div>}
                         </dl>
                       )}
-                      {selectedLocation.createdBy && <p className="marker-details-by">Added by account: {selectedLocation.createdBy}</p>}
+                      {selectedLocation.createdBy && (
+                        <p className="marker-details-by">
+                          Added by account: <PreservedContent>{selectedLocation.createdBy}</PreservedContent>
+                        </p>
+                      )}
 
                       {selectedLocation.category === 'Community engagement' && (
                         <>
@@ -1149,10 +1158,14 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                 icon={temporaryLocationIcon}
               >
                 <Popup>
+                  <LocalizedContent>
                   <div className="popup-card popup-card--temporary">
-                    <strong>{focusedMapLocation.name || 'Custom Marketplace pin'}</strong>
+                    <strong>{focusedMapLocation.name
+                      ? <PreservedContent>{focusedMapLocation.name}</PreservedContent>
+                      : 'Custom Marketplace pin'}</strong>
                     <span>{focusedMapLocation.lat.toFixed(5)}, {focusedMapLocation.lng.toFixed(5)}</span>
                   </div>
+                  </LocalizedContent>
                 </Popup>
               </Marker>
             )}
@@ -1193,10 +1206,12 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                 icon={fishingStartIcon}
               >
                 <Popup>
+                  <LocalizedContent>
                   <div className="popup-card popup-card--temporary">
-                    <strong>{startPoint.name}</strong>
+                    <strong><PreservedContent>{startPoint.name}</PreservedContent></strong>
                     <span>Fishing route start</span>
                   </div>
+                  </LocalizedContent>
                 </Popup>
               </Marker>
             ))}
@@ -1214,15 +1229,17 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                 icon={temporaryLocationIcon}
               >
                 <Popup>
+                  <LocalizedContent>
                   <div className="popup-card popup-card--temporary">
                     <strong>Origin</strong>
-                    <span>{routeState.origin.name}</span>
+                    <span><PreservedContent>{routeState.origin.name}</PreservedContent></span>
                     {['Custom pin', 'Custom origin', 'Custom location'].includes(routeState.origin.name) && (
                       <button type="button" className="route-popup-action" onClick={handleClearCustomRoutePins}>
                         Remove custom pin
                       </button>
                     )}
                   </div>
+                  </LocalizedContent>
                 </Popup>
               </Marker>
             )}
@@ -1233,15 +1250,17 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
                 icon={temporaryLocationIcon}
               >
                 <Popup>
+                  <LocalizedContent>
                   <div className="popup-card popup-card--temporary">
                     <strong>Destination</strong>
-                    <span>{routeState.destination.name}</span>
+                    <span><PreservedContent>{routeState.destination.name}</PreservedContent></span>
                     {routeState.destination.name === 'Custom destination' && (
                       <button type="button" className="route-popup-action" onClick={handleClearCustomRoutePins}>
                         Remove custom pin
                       </button>
                     )}
                   </div>
+                  </LocalizedContent>
                 </Popup>
               </Marker>
             )}
@@ -1277,5 +1296,6 @@ export default function Map({ user, demoMode, locations, locationsStatus, locati
         </div>
       </div>
     </div>
+    </LocalizedContent>
   );
 }

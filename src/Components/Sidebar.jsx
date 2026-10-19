@@ -1,6 +1,7 @@
 import { Home, Map, Bell, Calendar as CalendarIcon, Store, Bot, LogOut, User, ShieldCheck } from 'lucide-react'
 import logo from '../assets/Logo.svg'
 import './Sidebar.css'
+import { LocalizedContent } from '../i18n'
 
 export default function Sidebar({ user, demoMode, activePage, onNavigate, onLogin, onSignOut }) {
   const navItems = [
@@ -15,6 +16,7 @@ export default function Sidebar({ user, demoMode, activePage, onNavigate, onLogi
   const userDisplayName = user?.displayName || user?.email || (user?.isAnonymous && demoMode ? 'Demo admin' : 'User')
 
   return (
+    <LocalizedContent>
     <aside className="site-sidebar" aria-label="Main sidebar navigation">
       <div className="sidebar-top">
         <button
@@ -78,5 +80,6 @@ export default function Sidebar({ user, demoMode, activePage, onNavigate, onLogi
         )}
       </div>
     </aside>
+    </LocalizedContent>
   )
 }

@@ -3,6 +3,7 @@ import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { disablePushNotifications, enablePushNotifications, getPushStatus } from '../notifications'
 import './CommunityParticipationForms.css'
+import { LocalizedContent } from '../i18n'
 
 const updateTopics = ['Garbage collection', 'Outages', 'Services', 'Marketplace', 'Garden activities', 'Events', 'Schedules', 'Evacuation and relief', 'Community reports']
 const volunteerOptions = ['Garbage collection and cleanups', 'Emergency response and evacuation', 'Relief distribution', 'Community services', 'Garden activities', 'Events and schedules', 'Other']
@@ -113,6 +114,7 @@ export default function CommunityParticipationForms({
   }
 
   return (
+    <LocalizedContent>
     <section className="updates-community-forms" aria-labelledby="updates-community-title">
       <header className="updates-community-header">
         <div>
@@ -220,5 +222,6 @@ export default function CommunityParticipationForms({
         </form>
       </div>
     </section>
+    </LocalizedContent>
   )
 }

@@ -12,6 +12,7 @@ import {
   getReportStatus,
 } from '../utils/eventUtils'
 import './Updates.css'
+import { LocalizedContent, PreservedContent } from '../i18n'
 
 /* SVG icons per category */
 const categoryIcons = {
@@ -221,6 +222,7 @@ export default function Updates({
   )
 
   return (
+    <LocalizedContent>
     <main className="updates-page">
       <div className="updates-container">
         <header className="updates-page-header">
@@ -353,7 +355,7 @@ export default function Updates({
                   {/* Content in the center */}
                   <div className="updates-feed-content">
                     <div className="updates-feed-title-row">
-                      <h3 className="updates-feed-title">{event.title}</h3>
+                      <h3 className="updates-feed-title"><PreservedContent>{event.title}</PreservedContent></h3>
                       <span className={`updates-feed-type-badge updates-feed-type-badge--${event.category.toLowerCase().replace(/\s+/g, '-')}`}>
                         {event.activity || event.category}
                       </span>
@@ -368,7 +370,7 @@ export default function Updates({
                       {event.startTime ? ` · ${event.startTime}` : ''}
                     </span>
                     {event.description && (
-                      <p className="updates-feed-description">{event.description}</p>
+                      <p className="updates-feed-description"><PreservedContent>{event.description}</PreservedContent></p>
                     )}
                   </div>
                 </button>
@@ -400,5 +402,6 @@ export default function Updates({
         />
       )}
     </main>
+    </LocalizedContent>
   )
 }

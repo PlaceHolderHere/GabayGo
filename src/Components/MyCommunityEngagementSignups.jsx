@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import './CommunityEngagementActions.css'
+import { LocalizedContent, PreservedContent } from '../i18n'
 
 export default function MyCommunityEngagementSignups({ user }) {
   const [signups, setSignups] = useState({ userId: null, status: 'loading', items: [], error: '' })
@@ -50,6 +51,7 @@ export default function MyCommunityEngagementSignups({ user }) {
   }
 
   return (
+    <LocalizedContent>
     <section className="community-engagement-signups" aria-labelledby="my-engagement-signups-title">
       <header>
         <h2 id="my-engagement-signups-title">My community engagement signups</h2>
@@ -61,7 +63,7 @@ export default function MyCommunityEngagementSignups({ user }) {
       {currentSignups.items.map((signup) => (
         <article className="community-engagement-my-signup" key={signup.id}>
           <div>
-            <h3>{signup.markerName}</h3>
+            <h3><PreservedContent>{signup.markerName}</PreservedContent></h3>
             <p>Volunteering as {signup.methods.join(', ')}</p>
           </div>
           <button type="button" onClick={() => cancelSignup(signup)} disabled={cancellingId !== null}>
@@ -70,5 +72,6 @@ export default function MyCommunityEngagementSignups({ user }) {
         </article>
       ))}
     </section>
+    </LocalizedContent>
   )
 }

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { defaultHazardRadius, urgentCategories } from '../globals'
 import './UrgentNotifications.css'
+import { LocalizedContent, PreservedContent } from '../i18n'
+import { getDateLocale, useLanguage } from '../language'
 
 function parseLocationDate(date, time) {
   if (!date) return null
@@ -12,21 +14,21 @@ function getTimestampDate(timestamp) {
   return typeof timestamp?.toDate === 'function' ? timestamp.toDate() : null
 }
 
-function formatUrgentUpdatedAt(location) {
+function formatUrgentUpdatedAt(location, dateLocale) {
   const updatedAt = getTimestampDate(location.updatedAt) || getTimestampDate(location.createdAt)
-  return updatedAt ? updatedAt.toLocaleString() : 'Unavailable'
+  return updatedAt ? updatedAt.toLocaleString(dateLocale) : 'Unavailable'
 }
 
-function getAlertOrder(location, now) {
+function getAlertOrder(location, now, dateLocale) {
   if (['Hazard', 'Evacuation', 'Relief'].includes(location.category)) {
     const updatedAt = getTimestampDate(location.updatedAt) || getTimestampDate(location.createdAt)
-    return { priority: 0, sortTime: updatedAt?.getTime() || 0, timing: `Last updated ${formatUrgentUpdatedAt(location)}` }
+    return { priority: 0, sortTime: updatedAt?.getTime() || 0, timing: `Last updated ${formatUrgentUpdatedAt(location, dateLocale)}` }
   }
 
   const startsAt = parseLocationDate(location.startDate, location.startTime)
   const endsAt = parseLocationDate(location.endDate, location.endTime)
   if (startsAt && startsAt > now) {
-    return { priority: 2, sortTime: startsAt.getTime(), timing: `Starts ${startsAt.toLocaleString()}` }
+    return { priority: 2, sortTime: startsAt.getTime(), timing: `Starts ${startsAt.toLocaleString(dateLocale)}` }
   }
   if ((startsAt && startsAt <= now && (!endsAt || endsAt >= now)) || (!startsAt && endsAt && endsAt >= now)) {
     return { priority: 1, sortTime: endsAt?.getTime() || Number.MAX_SAFE_INTEGER, timing: 'Happening now' }
@@ -85,6 +87,8 @@ export default function UrgentNotifications({
   const [notificationsOpen, setNotificationsOpen] = useState(true)
   const [userToggled, setUserToggled] = useState(false)
   const [currentTime, setCurrentTime] = useState(() => Date.now())
+  const { language } = useLanguage()
+  const dateLocale = getDateLocale(language)
 
   useEffect(() => {
     const interval = window.setInterval(() => setCurrentTime(Date.now()), 60000)
@@ -93,7 +97,7 @@ export default function UrgentNotifications({
 
   const urgentAlerts = locations
     .filter((location) => urgentCategories.includes(location.category))
-    .map((location) => ({ location, ...getAlertOrder(location, currentTime) }))
+    .map((location) => ({ location, ...getAlertOrder(location, currentTime, dateLocale) }))
     .sort((first, second) => {
       if (first.priority !== second.priority) return first.priority - second.priority
       if (first.priority === 0 || first.priority === 4) return second.sortTime - first.sortTime
@@ -122,6 +126,7 @@ export default function UrgentNotifications({
   }
 
   return (
+    <LocalizedContent>
     <div className="urgent-notifications-root">
       <button
         className={`notifications-toggle urgent-alerts-toggle${urgentAlerts.length > 0 ? ' urgent-alerts-toggle--active' : ' urgent-alerts-toggle--empty'}`}
@@ -184,7 +189,7 @@ export default function UrgentNotifications({
                     {/* Content in the center */}
                     <div className="urgent-alert-content">
                       <div className="urgent-alert-title-row">
-                        <strong className="urgent-alert-title">{location.name}</strong>
+                        <strong className="urgent-alert-title"><PreservedContent>{location.name}</PreservedContent></strong>
                         <span className={`urgent-alert-type urgent-alert-type--${location.category.toLowerCase()}`}>
                           {location.category}
                         </span>
@@ -196,7 +201,7 @@ export default function UrgentNotifications({
                         </span>
                       )}
                       {location.description && (
-                        <p className="urgent-alert-desc">{location.description}</p>
+                        <p className="urgent-alert-desc"><PreservedContent>{location.description}</PreservedContent></p>
                       )}
                     </div>
                   </button>
@@ -221,5 +226,6 @@ export default function UrgentNotifications({
         </aside>
       )}
     </div>
+    </LocalizedContent>
   )
 }

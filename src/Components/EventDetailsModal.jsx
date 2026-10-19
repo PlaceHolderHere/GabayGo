@@ -9,6 +9,7 @@ import { bagoAplayaMaxBounds, bagoAplayaMinZoom } from '../data/bagoAplaya'
 import { scheduledCategories, getReportStatus, reportHistory, timestampDateKey } from '../utils/eventUtils'
 import 'leaflet/dist/leaflet.css'
 import './EventDetailsModal.css'
+import { LocalizedContent, PreservedContent } from '../i18n'
 
 export default function EventDetailsModal({ selectedEvent, user, onClose, onScheduleDeleted, onRequestLogin, onNavigate }) {
   const [scheduleDeleteState, setScheduleDeleteState] = useState({ id: null, status: '', error: '' })
@@ -49,6 +50,7 @@ export default function EventDetailsModal({ selectedEvent, user, onClose, onSche
   }
 
   return (
+    <LocalizedContent>
     <div className="event-details-backdrop" onClick={onClose} role="presentation">
       <aside
         className="event-details"
@@ -63,7 +65,7 @@ export default function EventDetailsModal({ selectedEvent, user, onClose, onSche
             <p className={`event-detail-category event-detail-category--${selectedLocation.category.toLowerCase().replace(/\s+/g, '-')}`}>
               {selectedLocation.category}
             </p>
-            <h2 id="event-details-title">{selectedLocation.name}</h2>
+            <h2 id="event-details-title"><PreservedContent>{selectedLocation.name}</PreservedContent></h2>
           </div>
           <div className="event-details-actions">
             {selectedLocation.category === 'Report' && (
@@ -109,7 +111,7 @@ export default function EventDetailsModal({ selectedEvent, user, onClose, onSche
           <p className="event-detail-locationless">This schedule has no map location.</p>
         )}
 
-        <p className="event-detail-description">{selectedLocation.description}</p>
+        <p className="event-detail-description"><PreservedContent>{selectedLocation.description}</PreservedContent></p>
 
         {scheduledCategories.includes(selectedLocation.category) && (
           <p className="event-detail-date">
@@ -177,5 +179,6 @@ export default function EventDetailsModal({ selectedEvent, user, onClose, onSche
         )}
       </aside>
     </div>
+    </LocalizedContent>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import './CategoryDropdown.css'
+import { LocalizedContent } from '../i18n'
 
 export default function CategoryDropdown({
   id,
@@ -67,6 +68,7 @@ export default function CategoryDropdown({
   const allSelected = categories.length > 0 && selectedCategories.length === categories.length
 
   return (
+    <LocalizedContent>
     <div
       className={`category-dropdown ${className} ${isOpen ? 'category-dropdown--open' : ''} ${disabled ? 'category-dropdown--disabled' : ''}`}
       ref={dropdownRef}
@@ -145,5 +147,6 @@ export default function CategoryDropdown({
         </div>
       )}
     </div>
+    </LocalizedContent>
   )
 }

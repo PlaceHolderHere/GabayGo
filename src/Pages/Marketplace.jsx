@@ -8,6 +8,8 @@ import { bagoAplayaMaxBounds, bagoAplayaMinZoom, bagoAplayaViewBounds, isInBagoA
 import { listingCategories } from '../globals'
 import 'leaflet/dist/leaflet.css'
 import './Marketplace.css'
+import { LocalizedContent, PreservedContent } from '../i18n'
+import { getDateLocale, useLanguage } from '../language'
 const emptyForm = {
   title: '',
   category: listingCategories[0],
@@ -30,6 +32,7 @@ function MarketplaceMapClickHandler({ onMapClick }) {
 
 function MarketplaceLocationPicker({ locations, customLocation, onChooseLocation, onChooseCustomLocation }) {
   return (
+    <LocalizedContent>
     <MapContainer
       bounds={bagoAplayaViewBounds}
       boundsOptions={{ padding: [12, 12] }}
@@ -63,13 +66,14 @@ function MarketplaceLocationPicker({ locations, customLocation, onChooseLocation
         />
       )}
     </MapContainer>
+    </LocalizedContent>
   )
 }
 
-function formatCreatedDate(timestamp) {
+function formatCreatedDate(timestamp, dateLocale) {
   if (!timestamp) return ''
   const date = typeof timestamp.toDate === 'function' ? timestamp.toDate() : new Date(timestamp)
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString()
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(dateLocale)
 }
 
 function getUsername(user) {
@@ -91,6 +95,8 @@ export default function Marketplace({
   onRequestLogin,
   onShowLocation,
 }) {
+  const { language } = useLanguage()
+  const dateLocale = getDateLocale(language)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('All')
   const [locationFilter, setLocationFilter] = useState('All')
@@ -516,6 +522,7 @@ export default function Marketplace({
   }
 
   return (
+    <LocalizedContent>
     <main className="marketplace-page">
       <header className="marketplace-header">
         <div>
@@ -630,19 +637,21 @@ export default function Marketplace({
                   <li className="marketplace-listing" key={listing.id}>
                     <div className="marketplace-listing-heading">
                       <span className="marketplace-listing-category">{listing.category}</span>
-                      {formatCreatedDate(listing.createdAt) && <time>{formatCreatedDate(listing.createdAt)}</time>}
+                      {formatCreatedDate(listing.createdAt, dateLocale) && <time>{formatCreatedDate(listing.createdAt, dateLocale)}</time>}
                     </div>
                     <span className={`marketplace-status marketplace-status--${listing.approvalStatus || 'underReview'}`}>
                       {listing.approvalStatus === 'approved' ? 'Approved' : listing.approvalStatus === 'denied' ? 'Denied' : 'Under review'}
                     </span>
                     {listing.active === false && <span className="marketplace-status marketplace-status--inactive">De-listed</span>}
-                    <h3>{listing.title}</h3>
-                    <p className="marketplace-listing-author">Listed by {getMemberLabel(listing.createdByName, listing.createdBy, user)}</p>
-                    <p className="marketplace-listing-offering">{listing.offering}</p>
+                    <h3><PreservedContent>{listing.title}</PreservedContent></h3>
+                    <p className="marketplace-listing-author">
+                      Listed by <PreservedContent>{getMemberLabel(listing.createdByName, listing.createdBy, user)}</PreservedContent>
+                    </p>
+                    <p className="marketplace-listing-offering"><PreservedContent>{listing.offering}</PreservedContent></p>
                     <dl>
                       <div>
                         <dt>Price</dt>
-                        <dd>{listing.price || 'Not specified'}</dd>
+                        <dd>{listing.price ? <PreservedContent>{listing.price}</PreservedContent> : 'Not specified'}</dd>
                       </div>
                       <div>
                         <dt>Marketplace location</dt>
@@ -654,7 +663,7 @@ export default function Marketplace({
                               onClick={() => onShowLocation({ id: location.id })}
                               aria-label={`Show ${location.name} on map`}
                             >
-                              {location.name} <span aria-hidden="true">↗</span>
+                              <PreservedContent>{location.name}</PreservedContent> <span aria-hidden="true">↗</span>
                             </button>
                           ) : (
                             <button
@@ -663,18 +672,18 @@ export default function Marketplace({
                               onClick={() => onShowLocation(location)}
                               aria-label={`Show ${location.name} on map`}
                             >
-                              {location.name} ({location.lat.toFixed(5)}, {location.lng.toFixed(5)}) <span aria-hidden="true">↗</span>
+                              <PreservedContent>{location.name}</PreservedContent> ({location.lat.toFixed(5)}, {location.lng.toFixed(5)}) <span aria-hidden="true">↗</span>
                             </button>
                           )}
                         </dd>
                       </div>
                       <div>
                         <dt>Hours</dt>
-                        <dd>{listing.hours}</dd>
+                        <dd><PreservedContent>{listing.hours}</PreservedContent></dd>
                       </div>
                       <div>
                         <dt>Contact</dt>
-                        <dd>{listing.contactMethod}</dd>
+                        <dd><PreservedContent>{listing.contactMethod}</PreservedContent></dd>
                       </div>
                     </dl>
                     {user?.uid === listing.createdBy && (
@@ -820,11 +829,13 @@ export default function Marketplace({
                 const canComplete = isSeller && order.status === 'accepted'
                 return <li className="marketplace-order" key={order.id}>
                   <div className="marketplace-order-heading">
-                    <h3>{order.listingTitle}</h3>
+                    <h3><PreservedContent>{order.listingTitle}</PreservedContent></h3>
                     <span className={`marketplace-status marketplace-status--${order.status}`}>{order.status}</span>
                   </div>
-                  <p>{isSeller ? 'Buyer request' : 'Your order'} · {order.price}</p>
-                  <p>{isSeller ? 'Buyer' : 'Seller'}: {getMemberLabel(isSeller ? order.buyerName : order.sellerName, isSeller ? order.buyerId : order.sellerId, user)}</p>
+                  <p>{isSeller ? 'Buyer request' : 'Your order'} · <PreservedContent>{order.price}</PreservedContent></p>
+                  <p>
+                    {isSeller ? 'Buyer' : 'Seller'}: <PreservedContent>{getMemberLabel(isSeller ? order.buyerName : order.sellerName, isSeller ? order.buyerId : order.sellerId, user)}</PreservedContent>
+                  </p>
                   {editingOrderId === order.id ? (
                     <div className="marketplace-order-edit">
                       <label className="marketplace-order-field">
@@ -851,10 +862,10 @@ export default function Marketplace({
                   ) : (
                     <>
                       <p>Quantity: {order.quantity ?? 1}</p>
-                      {order.notes && <p>Notes: {order.notes}</p>}
+                      {order.notes && <p>Notes: <PreservedContent>{order.notes}</PreservedContent></p>}
                     </>
                   )}
-                  {formatCreatedDate(order.createdAt) && <time>{formatCreatedDate(order.createdAt)}</time>}
+                  {formatCreatedDate(order.createdAt, dateLocale) && <time>{formatCreatedDate(order.createdAt, dateLocale)}</time>}
                   <div className="marketplace-order-actions">
                     {canRespond && <>
                       <button className="marketplace-secondary-button" type="button" onClick={() => handleUpdateOrder(order, 'accepted')} disabled={orderAction.orderId === order.id}>Accept</button>
@@ -1023,5 +1034,6 @@ export default function Marketplace({
         </aside>
       </>}
     </main>
+    </LocalizedContent>
   )
 }
